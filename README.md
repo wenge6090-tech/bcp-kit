@@ -148,7 +148,7 @@
 | 生产者 | mode | 内容 |
 |---|---|---|
 | check.py | static / plan / plan+collision | findings[rule,sev,msg]（详见 §9.1） |
-| memory-gate | gate | 注入/召回事件：域注入 {domain, file}；技能召回 {kind:"skill-recall", target:<技能名>}；append 失败仅跳过，绝不阻断工具执行 |
+| memory-gate | gate | 注入/召回事件（kind：domain 域注入 / big-read / compact-restore / skill-recall / sleep 节律）；append 失败仅跳过，绝不阻断工具执行 |
 | evolve.py | evolve | 每次报告的审计痕迹（候选清单） |
 
 **容量与生命周期**（2026-09-12 审计定案）：
@@ -170,7 +170,9 @@ flowchart LR
     EV["bcp/evolve.py 零LLM"]
     H{"元裁决"}
     P["晋升: 凝结进 toml+check.py\n原散文删除"]
-    D["降级: 迁 B 叙事(Blueprint/BCP)\n或删除"]
+    D["降级: 迁 B 叙事(Blueprint)\n或删除"]
+    SG["sleep 闸（memory-gate）:\n活动量 = commits − 上次REPORT基准 > 30"]
+    SL["/sleep 清单流: 机械对账→列清单\n→元裁决→打勾→删单"]
     CK --> LEDGER
     MG -.->|"append 失败仅跳过"| LEDGER
     LEDGER --> EV
@@ -178,6 +180,9 @@ flowchart LR
     H -->|批准| P
     H -->|批准| D
     P --> CK
+    LEDGER -.->|"REPORT 含 commits 基准"| SG
+    SG -->|"催一次"| SL
+    SL -->|"REPORT 落账 = 醒，计数归零"| LEDGER
 ```
 
 ### 4.4 evolve.py 报告器（零 LLM，纯标准库，守 §8.1 移植契约）
@@ -185,7 +190,7 @@ flowchart LR
 - 输入：`bcp/ledger.jsonl` + check.py 源中的规则名注册表（正则机械提取 seam 表键，不建副本）+ `.pi/rules/` 清单。
 - 输出：纯文本报告七节（见 §9.3）。
 - 参数：`--window N`（天，默认 30）、`--min-hits M`（默认 3）、`--ledger <path>`（默认 `bcp/ledger.jsonl`，测试可指向空账本验冷启动）。退出码恒 0（报告非裁决）。
-- 每次运行追加 mode=evolve 审计记录（候选以 findings WARN 形式入账）。
+- 每次运行追加 mode=evolve 审计记录（候选以 findings WARN 形式入账，含 `commits` 对账基准——sleep 触发判据的消费端，§4.7）。
 
 部件图：
 
@@ -197,13 +202,16 @@ classDiagram
         +gate_stats(window) 域注入计数
         +demote_candidates(window) Vec
         +promote_candidates(min_hits) Vec
+        +skill_assets() 召回计数+注册对碰
+        +report(commits) 对账基准落账
     }
     class LedgerRecord {
         ts / mode / verdict / findings
-        mode: static|plan|collision|gate|evolve
+        mode: static|plan|plan+collision|gate|failure|evolve
     }
     class MemoryGate {
-        +on_tool_call() 注入后 append mode=gate
+        +on_tool_call() 四闸门：域规则/大文件/compaction/sleep
+        +projectRoot() 子目录会话归一化
         写失败跳过不阻断
     }
     EvolveAnalyzer --> LedgerRecord : 只读
@@ -264,8 +272,8 @@ flowchart LR
     subgraph L2["层2 触点注释（跟代码走）"]
         TP["代码文件内 doc comment"]
     end
-    subgraph L1["层1 机械守护（check.py R1-R7 + 项目测试链）"]
-        MECH["R1-R7 终局验证"]
+    subgraph L1["层1 机械守护（check.py R1-R8 + 项目测试链）"]
+        MECH["R1-R8 终局验证"]
     end
     A["agent 会话"] -->|"read/edit/write 域内文件"| D
     D -->|"首次：block，reason=规则全文"| A
@@ -296,6 +304,7 @@ classDiagram
         r5_doc_ghost_paths() 含glob
         r6_plan() 锚支持 文件§x
         r7_explore_purity()
+        r8_skill_contract() 技能结构闸
     }
     class AgentsMd {
         核心索引 ≤6KB
@@ -462,7 +471,9 @@ python3 bcp/check.py --selfcheck
 | memory-gate 域注入 | 首次触碰 ROUTES 域文件 | block + 注入 `.pi/rules/<域>.md` 全文 |
 | memory-gate 大文件附注 | read >20KB（每文件一次） | 提示先 grep 定位再 offset/limit 定点读 |
 | memory-gate compaction 恢复 | `session_compact` 后首次工具调用 | 注入"重读计划文件"（计划 = 执行状态 Σt；摘要只当导航，状态以计划勾选为准，§6） |
-| /check（R5–R7 通用，R1–R4 按需） | 手动或实现完成时 | 机械裁决，FAIL 带修复方向 |
+| memory-gate sleep 闸 | 活动量超阈（commits − 上次 REPORT 基准 > 30，每会话一次） | 催巡检：跑 /sleep 清单流（机械对账→元裁决→打勾→REPORT 落账即醒，§4.7） |
+| /sleep 命令 | 手动（prompt 模板） | sleep 清单流五步：对账/列清单/呈元裁决/打勾/落账即醒 |
+| /check（R5–R8 通用，R1–R4 按需） | 手动或实现完成时 | 机械裁决，FAIL 带修复方向 |
 | pre-commit | 每次 git commit | **只跑 static 规则集**（R5 等）；R6 计划对碰靠工作流中 /check 触发——失败留档的计划合法存在于 `bcp/plans/`，故提交闸门不跑 --plan（已知缝隙）。绕过 = `--no-verify`（人可见越轨） |
 | evolve.py | 定期手动 | 晋升/降级候选数据，裁决权在元（§4.5） |
 

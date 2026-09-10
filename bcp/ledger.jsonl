@@ -71,3 +71,7 @@
 {"ts": "2026-09-11T00:27:56", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
 {"ts": "2026-09-11T00:27:56", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
 {"ts": "2026-09-11T00:27:56", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T00:32:25", "mode": "plan+collision", "verdict": "FAIL", "fail": 1, "warn": 0, "findings": [{"rule": "R6-plan-collision", "sev": "FAIL", "msg": "R1: accept 失败（→ 改代码）: grep -q 巡检闭环 README.md"}], "findings_truncated": 0}
+{"ts": "2026-09-11T00:32:36", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T00:32:36", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T00:32:36", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
