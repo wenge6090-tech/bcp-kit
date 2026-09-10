@@ -60,3 +60,9 @@
 {"ts": "2026-09-11T00:10:35", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
 {"ts": "2026-09-11T00:10:35", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
 {"ts": "2026-09-11T00:10:35", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T00:18:48", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T00:18:48", "mode": "plan+collision", "verdict": "FAIL", "fail": 2, "warn": 0, "findings": [{"rule": "R6-plan-collision", "sev": "FAIL", "msg": "P1: 声明文件不存在 wikiskill.md（→ 改计划）"}, {"rule": "R6-plan-collision", "sev": "FAIL", "msg": "P1: 声明文件不存在 SKILL.state.md（→ 改计划）"}], "findings_truncated": 0}
+{"ts": "2026-09-11T00:19:19", "mode": "plan+collision", "verdict": "FAIL", "fail": 3, "warn": 0, "findings": [{"rule": "R6-plan-collision", "sev": "FAIL", "msg": "P1: accept 失败（→ 改代码）: test ! -f wikiskill.md"}, {"rule": "R6-plan-collision", "sev": "FAIL", "msg": "声明未改动 SKILL.state.md（声明了没改 → 改实现或修正 files）"}, {"rule": "R6-plan-collision", "sev": "FAIL", "msg": "声明未改动 wikiskill.md（声明了没改 → 改实现或修正 files）"}], "findings_truncated": 0}
+{"ts": "2026-09-11T00:20:26", "mode": "failure", "verdict": "FAIL", "fail": 1, "warn": 0, "findings": [], "title": "删除型任务与 R6 files 存在性断言冲突", "avoidance": "删除型任务：files 只列修改/新建目标，删除目标走 accept（test ! -f）+ staged 后对碰；R6 collision 排除 porcelain D 状态", "domain": "bcp"}
+{"ts": "2026-09-11T00:20:54", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T00:20:54", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}

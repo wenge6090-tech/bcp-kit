@@ -21,5 +21,5 @@ bcp←`bcp/`、`.pi/extensions/`（`.pi/rules/bcp.md`；与 memory-gate ROUTES �
 
 - 工具包件（README.md/plan.md/bcp//.pi//kit/）变更 = 范式变更：先在会话中给用户看 diff 概览再落，范式层变更需人批准。
 - `bcp/check.py` 与 `bcp/bcp.toml` 改规则必须同步两处（R 注释标章节号）。
-- 模板件内不得残留项目专属逻辑（taiji 引用仅限案例/档案指针）。
+- 模板件内不得残留项目专属逻辑。
 - 提交前 check 自动跑（pre-commit），FAIL 不落库。

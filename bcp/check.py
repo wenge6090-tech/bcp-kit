@@ -70,7 +70,7 @@ def _unquote(s: str) -> str:
     return s
 
 
-# ---------------------------------------------------------------- R1 六触点（示例源自 taiji 分流案例，README.md §5.4）
+# ---------------------------------------------------------------- R1 六触点（示例模板，分流方法见 README.md §5.4）
 def r1_builtin_touchpoints() -> None:
     rule = "R1-builtin-touchpoints"
     cfg = CFG.get("rule", {}).get("builtin_touchpoints")
@@ -86,7 +86,7 @@ def r1_builtin_touchpoints() -> None:
                 fail(rule, f"触点未注册 {name!r} → {reg}")
 
 
-# ---------------------------------------------------------------- R2 类别子集同步（示例源自 taiji 分流案例）
+# ---------------------------------------------------------------- R2 类别子集同步（示例模板，分流方法见 README.md §5.4）
 def _fn_string_literals(text: str, fn_name: str) -> set[str]:
     m = re.search(rf"fn {re.escape(fn_name)}\b.*?^}}", text, re.S | re.M)
     if not m:
@@ -112,7 +112,7 @@ def r2_category_subset() -> None:
         fail(rule, f"判据 {i!r} 在 {cfg['kind_fn']} 而不在 {cfg['category_fn']}")
 
 
-# ---------------------------------------------------------------- R3 死字段禁止（示例源自 taiji 分流案例）
+# ---------------------------------------------------------------- R3 死字段禁止（示例模板，分流方法见 README.md §5.4）
 def r3_dead_fields() -> None:
     rule = "R3-dead-fields"
     cfg = CFG.get("rule", {}).get("dead_fields")
@@ -129,7 +129,7 @@ def r3_dead_fields() -> None:
                 fail(rule, f"死字段 {field} 在白名单外被引用: {rel}")
 
 
-# ---------------------------------------------------------------- R4 措辞禁令（示例源自 taiji 分流案例）
+# ---------------------------------------------------------------- R4 措辞禁令（示例模板，分流方法见 README.md §5.4）
 def r4_wording() -> None:
     rule = "R4-wording-scope"
     cfg = CFG.get("rule", {}).get("wording")
@@ -368,7 +368,13 @@ def r6_plan(plan_path: Path, *, run_accept: bool, collision: bool) -> None:
             ["git", "status", "--porcelain", "--untracked-files=all"],  # -uall：新目录折叠为目录级会漏对碰新文件
             cwd=ROOT, capture_output=True, text=True,
         ).stdout.splitlines()
-        raw_changed = {ln[3:].strip().strip('"') for ln in out if len(ln) > 3}  # strip 引号：git 对含空格/特殊字符路径加 C 风格引号，不剥则声明对不上
+        raw_changed = {
+            ln[3:].strip().strip('"')
+            for ln in out
+            # 剥引号：git 对含空格/特殊字符路径加 C 风格引号；排除删除（X/Y 含 D）：
+            # files 语义 = 修改/新建目标（§9.2），删除目标走 accept（test ! -f）验收，不进 files 对碰
+            if len(ln) > 3 and "D" not in ln[:2]
+        }
         # 豁免语义：excludes 路径不强制声明；但声明了就必须真改动。
         changed = {c for c in raw_changed if not c.startswith(excludes)}
         declared = {f for it in items for f in it.get("files", [])}
