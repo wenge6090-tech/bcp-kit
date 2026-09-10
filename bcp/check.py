@@ -177,9 +177,8 @@ def r5_doc_ghost_paths() -> None:
     targets: list[str] = []
     for doc in cfg["docs"]:
         if any(ch in doc for ch in "*?["):
+            # glob 零匹配 = 储层尚未沉淀（模板常态，§12.6 待积累语义），静默跳过不算告警
             matched = sorted(glob.glob(str(ROOT / doc)))
-            if not matched:
-                warn(rule, f"glob 无匹配（跳过）: {doc}")
             targets.extend(Path(m).resolve().relative_to(ROOT).as_posix() for m in matched)
         else:
             targets.append(doc)
@@ -338,7 +337,8 @@ def r6_plan(plan_path: Path, *, run_accept: bool, collision: bool) -> None:
     if collision:
         excludes = tuple(CFG.get("rule", {}).get("plan_collision", {}).get("excludes", []))
         out = subprocess.run(
-            ["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True
+            ["git", "status", "--porcelain", "--untracked-files=all"],  # -uall：新目录折叠为目录级会漏对碰新文件
+            cwd=ROOT, capture_output=True, text=True,
         ).stdout.splitlines()
         raw_changed = {ln[3:].strip() for ln in out if len(ln) > 3}
         # 豁免语义：excludes 路径不强制声明；但声明了就必须真改动。
@@ -350,13 +350,97 @@ def r6_plan(plan_path: Path, *, run_accept: bool, collision: bool) -> None:
             fail(rule, f"改动未声明 {f}（改了没声明 → 更新 files 或回退改动）")
 
 
+# ---------------------------------------------------------------- selfcheck
+def selfcheck() -> int:
+    """范式健康自检：报告各闸门依赖就绪状态（空转 = 依赖缺失，闸门形同虚设）。
+
+    空转的 check 比没有 check 更危险（虚假安全感）。报告非裁决：退出码恒 0，不入账本
+    （避免安装期频繁自检污染证据流；与 evolve.py 同为报告器但免刷屏）。
+    """
+    lines: list[str] = ["范式健康自检（--selfcheck，报告非裁决，不入账本）", ""]
+
+    def item(ok: bool, tag: str, okmsg: str, badmsg: str) -> None:
+        lines.append(f"  [{'OK  ' if ok else 'IDLE'}] {tag} — {okmsg if ok else badmsg}")
+
+    def note(tag: str, msg: str) -> None:
+        lines.append(f"  [NOTE] {tag} — {msg}")
+
+    # ── 宿主适配层（pi 专属；换宿主 = 重写等价机械注入层，README 两层结构表）
+    lines.append("[宿主适配层 .pi/（pi 专属，换宿主需重写等价机械注入层）]")
+    item((ROOT / ".pi" / "APPEND_SYSTEM.md").exists(), "工作流内核", "在", "缺失——四步工作流不可用")
+    gate = ROOT / ".pi" / "extensions" / "memory-gate.ts"
+    item(gate.exists(), "memory-gate 三闸门", "在", "缺失——域注入/大文件附注/compaction 恢复不可用")
+    if gate.exists():
+        # 剥离 // 注释行后机械提取 ROUTES（注释里的示例不得混入）
+        src = "\n".join(ln for ln in read(gate).splitlines() if not ln.lstrip().startswith("//"))
+        routes = re.findall(r'\[\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\]', src)
+        if not routes:
+            lines.append("  [IDLE] memory-gate ROUTES — 为空：域规则注入空转（配前缀→域映射 + .pi/rules/<域>.md）")
+        for prefix, domain in routes:
+            rf = ROOT / ".pi" / "rules" / f"{domain}.md"
+            item(rf.exists(), f"域规则 {domain}（{prefix}）", ".pi/rules/%s.md 在" % domain, "缺失——gate fail-open 放行 = 注入空转")
+    hook = ROOT / ".git" / "hooks" / "pre-commit"
+    if hook.exists():
+        item("check.py" in read(hook), "pre-commit 提交闸门", "已装", "存在但不调 check.py——用 kit/pre-commit")
+    elif (ROOT / ".git").exists():
+        item(False, "pre-commit 提交闸门", "", "未装——cp kit/pre-commit .git/hooks/ && chmod +x")
+    else:
+        note("pre-commit 提交闸门", "非 git 项目，无提交闸门（static check 照常可用）")
+
+    # ── R5 引用完整性
+    lines.append("[R5 引用完整性]")
+    cfg5 = CFG["rule"]["doc_ghost_paths"]
+    missing = [d for d in cfg5["docs"] if not any(ch in d for ch in "*?[") and not (ROOT / d).exists()]
+    item(not missing, "检视文档", f"{len(cfg5['docs'])} 项配置就绪", f"缺失 {missing}——对应文档路径断言不设防")
+    rules_dir = ROOT / ".pi" / "rules"
+    n_rules = len(list(rules_dir.glob("*.md"))) if rules_dir.exists() else 0
+    item(n_rules > 0, "规则储层 .pi/rules/", f"{n_rules} 个规则文件", "空——R5 对储层部分空转（沉淀避坑后生效）")
+
+    # ── R6 计划对碰
+    lines.append("[R6 计划对碰]")
+    item((ROOT / "bcp" / "plans").exists(), "计划目录 bcp/plans/", "在", "缺失——/plan 产出无落点（首次 /plan 自动建亦可）")
+    if not (ROOT / "Blueprint.md").exists():
+        note("Blueprint.md", "无——计划 blueprint 锚用 `文件§x.y` 格式（如 BCP.md§4）或先建蓝图（可选件，§2 B→P 接缝）")
+    n_plan = 0
+    if LEDGER.exists():
+        for ln in LEDGER.read_text(encoding="utf-8").splitlines():
+            try:
+                if str(json.loads(ln).get("mode", "")).startswith("plan"):
+                    n_plan += 1
+            except json.JSONDecodeError:
+                pass
+    item(n_plan > 0, "R6 实战记录", f"账本含 {n_plan} 条 plan 模式记录", "0 条——R6 管道未经实战（跑一次 /check --plan 验证）")
+
+    # ── R7 探索纯净
+    lines.append("[R7 探索纯净]")
+    item(bool(CFG.get("rule", {}).get("explore_purity")), "explore_purity 配置", "在", "bcp.toml 缺 [rule.explore_purity]——R7 空转")
+
+    # ── R1-R4 项目专属
+    lines.append("[R1-R4 项目专属（未配置 = 设计内跳过，非空转）]")
+    for key, name in (
+        ("builtin_touchpoints", "R1 六触点"),
+        ("category_subset", "R2 类别子集"),
+        ("dead_fields", "R3 死字段"),
+        ("wording", "R4 措辞"),
+    ):
+        lines.append(f"  [{'启用' if CFG.get('rule', {}).get(key) else '未配置'}] {name}")
+
+    print("\n".join(lines))
+    print("\n自检完成：IDLE 项 = 闸门空转风险，按提示补齐依赖；退出码恒 0（报告非裁决）")
+    return 0
+
+
 # ---------------------------------------------------------------- main
 def main() -> int:
     ap = argparse.ArgumentParser(description="BCP 对碰器 v0（阴·机械对碰）")
     ap.add_argument("--plan", type=Path, help="计划文件路径（启用 R6）")
     ap.add_argument("--collision", action="store_true", help="启用 git diff 双向对碰（需 --plan）")
     ap.add_argument("--no-exec", action="store_true", help="R6 不执行 accept 命令")
+    ap.add_argument("--selfcheck", action="store_true", help="范式健康自检（空转报告，不入账本，退出码恒 0）")
     args = ap.parse_args()
+
+    if args.selfcheck:
+        return selfcheck()
 
     r1_builtin_touchpoints()
     r2_category_subset()

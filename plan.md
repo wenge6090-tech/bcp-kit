@@ -13,7 +13,7 @@ goal: 一句话说清要做什么
 mode: infer                   # 可选：explore | infer（缺省 infer）；产出 deliverables/SKILL.md 或 skill_evolution 任务必须 explore（R7，BCP §3.1）
 items:
   - id: P1
-    blueprint: §5.2            # 必填：Blueprint.md 实际章节号（悬空 = FAIL）
+    blueprint: §5.2            # 必填：设计章节锚 `§x.y`（默认 Blueprint.md）或 `文件§x.y`（如 BCP.md§11.2）；悬空 = FAIL
     files:                     # 必填：改哪些文件，精确到文件；声明了没改 / 改了没声明都算 FAIL
       - src/orchestration/compile.rs
     interfaces:                # 推荐：关键签名，到代码文件里确认

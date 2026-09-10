@@ -78,10 +78,14 @@ def main() -> int:
     for r in recs:
         mode = r.get("mode", "")
         if mode == "gate":
-            d = str(r.get("domain", "?"))
+            # 只统计域注入（kind=domain）：big-read/compact-restore 无 domain，计入会污染
+            # §12.6 冷启动判定与域统计。字段兼容：旧记录仅 target（memory-gate 曾写 kind/target）。
+            if str(r.get("kind", "domain")) != "domain":
+                continue
+            d = str(r.get("domain") or r.get("target") or "?")
             gate_by_domain[d] += 1
             gate_domains.add(d)
-            gate_files.setdefault(d, set()).add(str(r.get("file", "")))
+            gate_files.setdefault(d, set()).add(str(r.get("file") or r.get("target") or ""))
             if r.get("verdict") == "FAIL_OPEN":
                 fail_open += 1
             continue
@@ -99,9 +103,9 @@ def main() -> int:
     lines: list[str] = [
         f"BCP 演化算子报告  window={args.window}d  min_hits={args.min_hits}  账本记录={len(recs)}"
     ]
-    cold = sum(gate_by_domain.values()) == 0  # §12.6 冷启动：无任何 gate 事件，死重判定无效
+    cold = sum(gate_by_domain.values()) == 0  # §12.6 冷启动：无任何域注入事件，死重判定无效
     if cold:
-        lines.append("  [冷启动] 尚无 gate 事件——死重判定无效，④ 列为待积累（§12.6）")
+        lines.append("  [冷启动] 尚无域注入事件——死重判定无效，④ 列为待积累（§12.6）")
 
     lines.append("\n① check 规则命中（注册表来源：check.py seam 表）")
     for rule in rules:
@@ -112,8 +116,8 @@ def main() -> int:
     if unregistered:
         lines.append(f"  [注意] 账本中出现注册表外规则名: {unregistered}")
 
-    lines.append(f"\n② memory-gate 域注入计数（gate 事件 {sum(gate_by_domain.values())}，FAIL_OPEN {fail_open}）")
-    for d in sorted(gate_domains) or ["（尚无 gate 事件——扩展需重启会话后开始积累）"]:
+    lines.append(f"\n② memory-gate 域注入计数（域注入事件 {sum(gate_by_domain.values())}，FAIL_OPEN {fail_open}）")
+    for d in sorted(gate_domains) or ["（尚无域注入事件——配 ROUTES 后重启会话开始积累）"]:
         lines.append(
             f"  {d:15s} 注入={gate_by_domain.get(d, 0):3d}  触碰文件数={len(gate_files.get(d, set()))}"
         )

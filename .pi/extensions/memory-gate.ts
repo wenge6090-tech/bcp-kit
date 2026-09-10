@@ -29,7 +29,10 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 // const ROUTES: [prefix: string, domain: string][] = [
 //   ["src/types/", "types"], ["src/infra/", "infra"],
 // ];
-const ROUTES: [prefix: string, domain: string][] = [];
+const ROUTES: [prefix: string, domain: string][] = [
+	["bcp/", "bcp"],
+	[".pi/extensions/", "bcp"],
+];
 
 /** 大文件整读拦截阈值（字节）。~20KB ≈ 5-7k tokens。0 = 关闭。 */
 const BIG_READ_KB = 20;
@@ -43,11 +46,12 @@ function localTs(): string {
 	return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
-function logGate(cwd: string, kind: string, target: string, verdict: string) {
+function logGate(cwd: string, kind: string, target: string, verdict: string, extra?: Record<string, unknown>) {
 	try {
 		appendFileSync(
 			join(cwd, "bcp", "ledger.jsonl"),
-			JSON.stringify({ ts: localTs(), mode: "gate", verdict, fail: 0, warn: 0, findings: [], kind, target }) + "\n",
+			// §12.1 契约：域注入事件 {domain, file}；kind/target 为兼容字段（evolve.py 兼容读两端）
+			JSON.stringify({ ts: localTs(), mode: "gate", verdict, fail: 0, warn: 0, findings: [], kind, target, ...extra }) + "\n",
 		);
 	} catch {
 		/* 证据流失败不影响注入 */
@@ -129,7 +133,7 @@ export default function memoryGate(pi: ExtensionAPI) {
 			return;
 		}
 		injectedDomains.add(domain);
-		logGate(cwd, "domain", domain, "INJECTED");
+		logGate(cwd, "domain", domain, "INJECTED", { domain, file: abs }); // §12.1 {domain, file}
 		return {
 			block: true,
 			reason:

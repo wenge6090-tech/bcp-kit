@@ -9,8 +9,13 @@
 | `BCP.md` / `plan.md` | 范式 spec + 计划 schema（工具包主体，宿主无关） |
 | `bcp/` | check.py（对碰器）+ bcp.toml（模板配置）+ evolve.py + ledger.jsonl |
 | `.pi/` | pi 宿主适配层：APPEND_SYSTEM.md 工作流 + memory-gate（三闸门）/bcp-check 扩展 + prompts |
-| `kit/` | 分发件：AGENTS.template.md（实例骨架）+ pre-commit（提交闸门） |
+| `kit/` | 分发件：AGENTS.template.md（实例骨架，不随项目复制）+ pre-commit（提交闸门） |
+| `.pi/rules/` | 按域避坑储层（bcp 域），memory-gate 首触注入 |
 | `bcp/plans/` | 本仓库自己的计划（实例层） |
+
+## 规则域映射
+
+bcp←`bcp/`、`.pi/extensions/`（`.pi/rules/bcp.md`；与 memory-gate ROUTES 同步）
 
 ## 硬约束
 
