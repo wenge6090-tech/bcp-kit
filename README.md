@@ -109,7 +109,7 @@
 - **默认产物双轨**：阳产出 `deliverables/SKILL.md`（纯文本规则 + Frontmatter 元数据）+ `deliverables/declaration.yaml`（结构化自声明）。
 - **编译降级为可选优化**：Python 固化仅在 ① 人类显式 `--compile-python`，或 ② 文本规则验证集成功率 ≥95% 时触发一次；其余场景文本即技能。
 - **与 taiji 蓝图旧规⑥不冲突**（档案）：文本技能走 prompt 注入轨道，不是机械执行体——「执行体统一 Python」继续成立；运行时文本技能类型为候选扩展（§8.2 待做）。
-- **机械衔接**：① 结构闸 **R8**（check.py）——`deliverables/<name>/SKILL.md` 必须带 frontmatter 三件套（`name`/`description`/`validation`）+「适用条件」节 +「溯源」节，无结构不结晶（无目录静默跳过）；② 召回挂载——pi 宿主在 `.pi/settings.json` 挂 `deliverables`（description 常驻系统提示、正文按需读 = §5.5 匹配召回）；③ 召回记账——memory-gate 对读技能正文追加 `kind=skill-recall` 事件，evolve ⑦ 节统计（召回=0 = 死重候选）。
+- **机械衔接**：① 结构闸 **R8**（check.py）——`deliverables/<name>/SKILL.md` 必须带 frontmatter 三件套（`name`/`description`/`validation`）+「适用条件」节 +「溯源」节，无结构不结晶（无目录静默跳过）；② 召回挂载——pi 宿主在 `.pi/settings.json` 挂 `deliverables`（**渐进披露：description 一行常驻系统提示、正文按需读**，全局可见受 §6 墙约束；技能是任务语义匹配，不绑代码路径域；可选 `domains: [...]` 字段仅作分组统计）；③ 召回记账——memory-gate 对读技能正文追加 `kind=skill-recall` 事件，evolve ⑦ 节统计（召回=0 = 死重候选）；④ **注册对碰**——注册凭证 = ledger `PROMOTED` 裁决记录（`kind:"skill"`, `target`=技能名，结晶经能垒的账本证据）；⑦ 节双向对碰：有目录无记录=绕能垒结晶，有记录无目录=幽灵注册（R6 声明↔实现同构）。
 
 ## 3. 阴：机械对碰
 
@@ -209,7 +209,7 @@ classDiagram
 ### 4.5 晋升与降级执行（守 §4.1）
 
 - **晋升**：报告给出高频候选 → 元批准 → agent 执行（散文规则凝结进 `bcp/bcp.toml` + `bcp/check.py`，原散文从 rules 文件删除）→ `/check` 全绿即凭证，无额外能垒。
-- **裁决落账**：晋升/结晶获批 / 被拒后追加一条 ledger 记录 `{mode:"evolve", verdict:"PROMOTED"|"REJECTED", target:"<规则名或技能名>", source:"<来源失败模式标题，可选>", note:"<原因>"}`——append-only 下以此实现失败模式→规则/技能的溯源（不回填历史记录），evolve ⑥ 节回放，被拒候选不重复提案（WikiSkill skill-impact 同构）。
+- **裁决落账**：晋升/结晶获批 / 被拒后追加一条 ledger 记录 `{mode:"evolve", verdict:"PROMOTED"|"REJECTED", target:"<规则名或技能名>", kind:"skill"（技能裁决必标，与规则晋升区分）, source:"<来源失败模式标题，可选>", note:"<原因>"}`——append-only 下以此实现失败模式→规则/技能的溯源（不回填历史记录），evolve ⑥ 节回放 + ⑦ 节注册对碰（kind=skill 的 PROMOTED ↔ deliverables 目录），被拒候选不重复提案（WikiSkill skill-impact 同构）。
 - **降级**：报告给出零命中/死重候选 → **必经元裁决**（「未防过事故」不可机械测；零命中的低频高害规则如 R1/R2/R4 不宜自动降）→ 批准后迁 B 叙事（项目 Blueprint.md / 本 README）或删除。
 
 ### 4.6 冷启动语义（gate 证据无效期）
@@ -378,7 +378,7 @@ classDiagram
 | `plan` | check.py | `--plan` 计划检查（含 accept 命令真实执行） |
 | `plan+collision` | check.py | 再加 git 双向对碰：声明了没改 / 改了没声明，双向都 FAIL |
 | `gate` | memory-gate 扩展 | 四种事件，看 `kind` 区分：`domain`（首次触碰某代码域，强制注入该域规则）；`big-read`（整读 >20KB 文件的定位提醒）；`compact-restore`（会话压缩后恢复进度提示）；`skill-recall`（读 `deliverables/*/SKILL.md` 正文 = 技能被召回，纯记账不拦截） |
-| `evolve` | evolve.py | 两种：**REPORT**=演化报告器运行的审计记录（本次产出哪些候选）；**PROMOTED / REJECTED**=晋升候选经人批准/拒绝后的裁决记录，字段 `target`=规则名、`source`=来源失败模式标题（可选溯源）、`note`=原因——⑥ 节回放，被拒候选勿重复提案 |
+| `evolve` | evolve.py | 三种：**REPORT**=演化报告器运行的审计记录（本次产出哪些候选）；**PROMOTED / REJECTED**=晋升/结晶候选经人批准/拒绝后的裁决记录，字段 `target`=规则名或技能名（技能裁决必标 `kind:"skill"`）、`source`=来源失败模式标题（可选溯源）、`note`=原因——⑥ 节回放防重复提案；kind=skill 的 PROMOTED 同时是技能注册凭证，⑦ 节与 deliverables 目录双向对碰 |
 | `failure` | agent 按协议追加 | 任务以 FAIL 收尾时的**失败典藏**：`{title, avoidance, domain}` = 标题 + 规避句（≤200 字符）+ 所属域。只留模式，不留过程——这是给后续任务回注的「别再踩」规则 |
 
 ### 9.2 check.py 规则（R1–R7）

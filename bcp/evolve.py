@@ -176,8 +176,15 @@ def main() -> int:
 
     lines.append("\n⑦ 技能资产（deliverables/*/SKILL.md，召回=skill-recall 事件，§2.4）")
     skills = sorted(p.parent.name for p in (ROOT / "deliverables").glob("*/SKILL.md")) if (ROOT / "deliverables").is_dir() else []
+    # 注册对碰（声明↔实现，R6 同构）：技能的注册凭证 = ledger PROMOTED 记录（结晶经能垒，§4.5）。
+    # 协议：技能裁决记录 target=技能名且 kind="skill"（与规则晋升的 PROMOTED 区分）。
+    skill_promoted = {str(r.get("target")) for r in recs if r.get("mode") == "evolve" and r.get("verdict") == "PROMOTED" and str(r.get("kind")) == "skill"}
     for s in skills:
-        lines.append(f"  deliverables/{s}/SKILL.md  召回={skill_recall.get(s, 0)}")
+        reg = "已注册" if s in skill_promoted else "未注册（无 PROMOTED 记录——绕能垒结晶，补裁决或删除）"
+        lines.append(f"  deliverables/{s}/SKILL.md  召回={skill_recall.get(s, 0)}  {reg}")
+    ghost = skill_promoted - set(skills)
+    if ghost:
+        lines.append(f"  [幽灵注册] kind=skill 的 PROMOTED 无对应技能目录: {sorted(ghost)}——补资产或修正记录")
     if not skills:
         lines.append("  （无技能资产——可选轨道，模板常态）")
 
