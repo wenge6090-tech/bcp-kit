@@ -14,3 +14,7 @@
 {"ts": "2026-09-10T13:32:42", "mode": "plan+collision", "verdict": "FAIL", "fail": 3, "warn": 0, "findings": [{"rule": "R6-plan-collision", "sev": "FAIL", "msg": "S2: accept 失败（→ 改代码）: grep -q 'r.get(\"kind\", \"domain\") != \"domain\"' bcp/evolve.py"}, {"rule": "R6-plan-collision", "sev": "FAIL", "msg": "S2: accept 失败（→ 改代码）: test $(grep -c 'glob 无匹配' bcp/check.py) -eq 0"}, {"rule": "R6-plan-collision", "sev": "FAIL", "msg": "声明未改动 .pi/rules/bcp.md（声明了没改 → 改实现或修正 files）"}]}
 {"ts": "2026-09-10T13:33:12", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
 {"ts": "2026-09-10T15:28:09", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
+{"ts": "2026-09-10T15:39:57", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
+{"ts": "2026-09-10T15:40:36", "mode": "plan", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
+{"ts": "2026-09-10T15:40:41", "mode": "evolve", "verdict": "REPORT", "fail": 0, "warn": 3, "findings": [{"rule": "evolve-report", "sev": "WARN", "msg": "降级候选: R7-explore-purity(§2.3)"}, {"rule": "evolve-report", "sev": "WARN", "msg": "强化证据: R5-doc-ghost-paths(引用完整性) 窗口内28"}, {"rule": "evolve-report", "sev": "WARN", "msg": "强化证据: R6-plan-collision 窗口内3"}], "window": 365, "min_hits": 3, "cold_start": true}
+{"ts": "2026-09-10T15:40:59", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}

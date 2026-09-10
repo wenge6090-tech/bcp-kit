@@ -15,7 +15,7 @@
  *    注入"重读当前计划文件对齐进度"——执行状态 Σt 落盘在 bcp/plans/，过程可丢、
  *    状态必恢复（SKILL.state 式投影，V82）。
  *
- * 设计定论：BCP.md §11.5 / §13。触发信号 = 文件路径与事件（机械事实），无 LLM 判断。
+ * 设计定论：BCP.md §5.5 / §8.3。触发信号 = 文件路径与事件（机械事实），无 LLM 判断。
  * 所有拦截 fail-open：规则缺失/异常放行 + notify，绝不死锁。注入事件入 bcp/ledger.jsonl
  * （mode=gate，写失败静默跳过）。
  */
@@ -50,7 +50,7 @@ function logGate(cwd: string, kind: string, target: string, verdict: string, ext
 	try {
 		appendFileSync(
 			join(cwd, "bcp", "ledger.jsonl"),
-			// §12.1 契约：域注入事件 {domain, file}；kind/target 为兼容字段（evolve.py 兼容读两端）
+			// §4.3 契约：域注入事件 {domain, file}；kind/target 为兼容字段（evolve.py 兼容读两端）
 			JSON.stringify({ ts: localTs(), mode: "gate", verdict, fail: 0, warn: 0, findings: [], kind, target, ...extra }) + "\n",
 		);
 	} catch {
@@ -133,7 +133,7 @@ export default function memoryGate(pi: ExtensionAPI) {
 			return;
 		}
 		injectedDomains.add(domain);
-		logGate(cwd, "domain", domain, "INJECTED", { domain, file: abs }); // §12.1 {domain, file}
+		logGate(cwd, "domain", domain, "INJECTED", { domain, file: abs }); // §4.3 {domain, file}
 		return {
 			block: true,
 			reason:

@@ -70,9 +70,9 @@ def _unquote(s: str) -> str:
     return s
 
 
-# ---------------------------------------------------------------- R1 §20 六触点
+# ---------------------------------------------------------------- R1 六触点（示例源自 taiji 分流案例，BCP.md §5.4）
 def r1_builtin_touchpoints() -> None:
-    rule = "R1-builtin-touchpoints(§20)"
+    rule = "R1-builtin-touchpoints"
     cfg = CFG.get("rule", {}).get("builtin_touchpoints")
     if not cfg:
         return  # 未配置 = 未启用（R1–R4 为项目专属结构性规则，模板项目按需配置）
@@ -86,7 +86,7 @@ def r1_builtin_touchpoints() -> None:
                 fail(rule, f"触点未注册 {name!r} → {reg}")
 
 
-# ---------------------------------------------------------------- R2 §9 同步
+# ---------------------------------------------------------------- R2 类别子集同步（示例源自 taiji 分流案例）
 def _fn_string_literals(text: str, fn_name: str) -> set[str]:
     m = re.search(rf"fn {re.escape(fn_name)}\b.*?^}}", text, re.S | re.M)
     if not m:
@@ -95,7 +95,7 @@ def _fn_string_literals(text: str, fn_name: str) -> set[str]:
 
 
 def r2_category_subset() -> None:
-    rule = "R2-category-subset(§9)"
+    rule = "R2-category-subset"
     cfg = CFG.get("rule", {}).get("category_subset")
     if not cfg:
         return  # 未配置 = 未启用
@@ -112,9 +112,9 @@ def r2_category_subset() -> None:
         fail(rule, f"判据 {i!r} 在 {cfg['kind_fn']} 而不在 {cfg['category_fn']}")
 
 
-# ---------------------------------------------------------------- R3 §13 死字段
+# ---------------------------------------------------------------- R3 死字段禁止（示例源自 taiji 分流案例）
 def r3_dead_fields() -> None:
-    rule = "R3-dead-fields(§13)"
+    rule = "R3-dead-fields"
     cfg = CFG.get("rule", {}).get("dead_fields")
     if not cfg:
         return  # 未配置 = 未启用
@@ -129,9 +129,9 @@ def r3_dead_fields() -> None:
                 fail(rule, f"死字段 {field} 在白名单外被引用: {rel}")
 
 
-# ---------------------------------------------------------------- R4 §14 措辞域
+# ---------------------------------------------------------------- R4 措辞禁令（示例源自 taiji 分流案例）
 def r4_wording() -> None:
-    rule = "R4-wording-scope(§14)"
+    rule = "R4-wording-scope"
     cfg = CFG.get("rule", {}).get("wording")
     if not cfg:
         return  # 未配置 = 未启用
@@ -177,7 +177,7 @@ def r5_doc_ghost_paths() -> None:
     targets: list[str] = []
     for doc in cfg["docs"]:
         if any(ch in doc for ch in "*?["):
-            # glob 零匹配 = 储层尚未沉淀（模板常态，§12.6 待积累语义），静默跳过不算告警
+            # glob 零匹配 = 储层尚未沉淀（模板常态，§4.6 待积累语义），静默跳过不算告警
             matched = sorted(glob.glob(str(ROOT / doc)))
             targets.extend(Path(m).resolve().relative_to(ROOT).as_posix() for m in matched)
         else:
@@ -208,9 +208,9 @@ def r5_doc_ghost_paths() -> None:
                         fail(rule, f"{doc}:{lineno} 断言源文件不存在: {tok}")
 
 
-# ---------------------------------------------------------------- R7 §3.1 探索纯净
+# ---------------------------------------------------------------- R7 §2.3 探索纯净
 def r7_explore_purity(plan: dict) -> None:
-    rule = "R7-explore-purity(§3.1)"
+    rule = "R7-explore-purity(§2.3)"
     cfg = CFG.get("rule", {}).get("explore_purity")
     if not cfg:
         return
@@ -304,7 +304,7 @@ def r6_plan(plan_path: Path, *, run_accept: bool, collision: bool) -> None:
         if not raw:
             warn(rule, f"{pid}: 未声明 blueprint 锚（建议引用章节号）")
             continue
-        # 锚格式：`§x.y`（默认 Blueprint.md）或 `文件§x.y`（如 BCP.md§11.2）
+        # 锚格式：`§x.y`（默认 Blueprint.md）或 `文件§x.y`（如 BCP.md§2.3）
         doc, _, sec = raw.partition("§")
         doc = doc.strip() or "Blueprint.md"
         sec = sec.strip()
@@ -451,13 +451,13 @@ def main() -> int:
         r6_plan(args.plan, run_accept=not args.no_exec, collision=args.collision)
 
     seam = {
-        "R1-builtin-touchpoints(§20)": "改代码",
-        "R2-category-subset(§9)": "改代码",
-        "R3-dead-fields(§13)": "改代码",
-        "R4-wording-scope(§14)": "改代码",
+        "R1-builtin-touchpoints": "改代码",
+        "R2-category-subset": "改代码",
+        "R3-dead-fields": "改代码",
+        "R4-wording-scope": "改代码",
         "R5-doc-ghost-paths(引用完整性)": "改文档",
         "R6-plan-collision": "见各条",
-        "R7-explore-purity(§3.1)": "改计划",
+        "R7-explore-purity(§2.3)": "改计划",
     }
     for r, s, m in findings:
         print(f"[{s}] {r} [{seam.get(r, '')}]\n    {m}")

@@ -1,7 +1,7 @@
 # BCP 对碰器规则配置（模板）— 阴·机械对碰的规则库
 # 移植到新项目：本文件随 bcp/ 一并复制，R1–R4 为项目专属结构性规则（未配置 = 自动跳过），
-# 按项目沉淀逐步启用（§7 晋升算子：散文规则反复违反且可机械化 → 凝结为配置 + check 实现）。
-# 规则 id 对应 BCP.md 章节号 —— 散文规则凝结为机械判据的来源标注。
+# 按项目沉淀逐步启用（§4.2 晋升算子：散文规则反复违反且可机械化 → 凝结为配置 + check 实现）。
+# 规则 id 标注范式定论来源（BCP.md 章节；R1–R4 示例源自 taiji 分流案例，见 BCP.md §5.4）。
 
 # ---------- 通用规则（模板自带，开箱即用） ----------
 
@@ -15,7 +15,7 @@ ignore_prefixes = ["target/", "node_modules/", "deliverables/", "tasks/", "promp
 root_map = {}
 
 [rule.explore_purity]
-# R7 探索纯净：产出原始轨迹（SKILL.md）/ skill_evolution 任务必须 mode: explore（BCP §3.1）
+# R7 探索纯净：产出原始轨迹（SKILL.md）/ skill_evolution 任务必须 mode: explore（BCP §2.3）
 raw_track_markers = ["SKILL.md"]
 
 [rule.plan_collision]
@@ -23,29 +23,29 @@ raw_track_markers = ["SKILL.md"]
 excludes = ["bcp/", ".pi/", "plan.md", "BCP.md", "AGENTS.md", "Blueprint.md", "bcp/ledger.jsonl"]
 
 [rule.demote]
-# §12.3 降级豁免：结构性规则（违反即大改，命中天然低频）不参与命中数降级
+# §4.5 降级豁免：结构性规则（违反即大改，命中天然低频）不参与命中数降级
 exempt_prefixes = ["R1-", "R2-", "R3-", "R4-"]
 
 # ---------- 项目专属规则（示例配置，按项目启用；删除整节 = 规则跳过） ----------
 
 # [rule.builtin_touchpoints]
-# §20 六触点：每个 builtin 工具的执行体存在 + 全部注册点出现（N 触点按项目实际增减）
+# R1 六触点（示例源自 taiji 分流案例，BCP.md §5.4）：每个 builtin 工具的执行体存在 + 全部注册点出现（N 触点按项目实际增减）
 # builtins = ["read", "write", "edit", "bash", "search", "webfetch"]
 # exec_dir = "src/agents/tools/skills"
 # registries = ["src/agents/tools/skills/mod.rs", "src/types/verification.rs"]
 
 # [rule.category_subset]
-# §9 kind 集 ⊆ category 集（两函数内的字符串字面量机械提取对比）
+# R2 kind 集 ⊆ category 集（两函数内的字符串字面量机械提取对比）
 # file = "src/types/verification.rs"
 # kind_fn = "builtin_check_kind"
 # category_fn = "builtin_category"
 
 # [rule.dead_fields]
-# §13 死字段禁止出现消费点（白名单文件之外引用即失败）
+# R3 死字段禁止出现消费点（白名单文件之外引用即失败）
 # fields = ["some_dead_field"]
 # allow_files = ["src/types/agent.rs"]
 
 # [rule.wording]
-# §14 措辞禁令（作用域 = prompt 模板与验证输出域）
+# R4 措辞禁令（作用域 = prompt 模板与验证输出域）
 # scope = ["src/agents"]
 # banned = ["check skipped"]
