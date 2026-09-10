@@ -479,6 +479,9 @@ def selfcheck() -> int:
     pulse = n_commit - n_last
     item(pulse <= 30, "sleep 巡检节律", f"活动量 {pulse}/30 commit", f"活动量 {pulse} > 30 未巡检——跑 python3 bcp/evolve.py 落 REPORT 账即重置（/sleep 清单流见 README §4.7）")
 
+    # 工作流逃逸代理（README §4.7）：commit 数 vs plan 记录数——粗代理非裁决，元看数据对账（/sleep）
+    item(not (n_commit > 30 and n_plan * 5 < n_commit), "工作流逃逸代理", f"commits={n_commit} plan记录={n_plan}", "高 commit 低 plan 记录——疑有任务绕过计划流，跑 /sleep 对账清单核查")
+
     # ── R1-R4 项目专属
     lines.append("[R1-R4 项目专属（未配置 = 设计内跳过，非空转）]")
     for key, name in (

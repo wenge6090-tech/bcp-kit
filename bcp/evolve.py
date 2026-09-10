@@ -109,8 +109,14 @@ def main() -> int:
             if rule not in last_seen or str(r.get("ts", "")) > last_seen[rule]:
                 last_seen[rule] = str(r.get("ts", ""))
 
+    n_commit_head = 0
+    try:
+        n_commit_head = int(subprocess.run(["git", "rev-list", "--count", "HEAD"], capture_output=True, text=True, cwd=ROOT).stdout.strip() or 0)
+    except Exception:
+        pass
+    n_plan_head = sum(1 for r in recs if r.get("mode") in ("plan", "plan+collision"))
     lines: list[str] = [
-        f"BCP 演化算子报告  window={args.window}d  min_hits={args.min_hits}  账本记录={len(recs)}"
+        f"BCP 演化算子报告  window={args.window}d  min_hits={args.min_hits}  账本记录={len(recs)}  commits={n_commit_head}  plan记录={n_plan_head}"
     ]
     cold = sum(gate_by_domain.values()) == 0  # §4.6 冷启动：无任何域注入事件，死重判定无效
     if cold:
