@@ -1,4 +1,8 @@
 #!/bin/sh
 # BCP 提交闸门：机械 check FAIL 拒绝提交。
 # 绕过 = git commit --no-verify（人可见越轨）。
-python3 bcp/check.py
+# check 会追加证据账本 bcp/ledger.jsonl（append-only），将其 staged 随本次提交入库，
+# 否则每次 commit 后工作区永远 dirty（账本循环）。
+python3 bcp/check.py || exit 1
+git add bcp/ledger.jsonl 2>/dev/null
+exit 0
