@@ -74,7 +74,10 @@ export default function bcpCheckExtension(pi: ExtensionAPI) {
 				pi.appendEntry("bcp-check", { plan, verdict: "FAIL", output });
 				pi.sendUserMessage(
 					`[bcp-check] 检查 FAIL（${plan}）。机械裁决：\n\n${output}\n\n` +
-						`按每条标注的修复方向处理（改代码 / 改文档 / 改计划），改完再次 /check。`,
+						`按每条标注的修复方向处理（改代码 / 改文档 / 改计划），改完再次 /check。` +
+						`若本任务最终以 FAIL 收尾（不再重试）：强制失败典藏（BCP §1）——压缩一条失败模式` +
+						`（标题+规避句 ≤200 字符）追加 bcp/ledger.jsonl（mode=failure，字段 title/avoidance/domain，§4.3）` +
+						`+ 对应 .pi/rules/<域>.md。`,
 				);
 			}
 		},
