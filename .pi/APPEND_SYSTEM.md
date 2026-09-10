@@ -26,10 +26,11 @@
 
 ## 4. 沉淀
 
-- ≤3 条避坑 → 对应 `.pi/rules/<域>.md`（无对应文件则新建并在 AGENTS.md「规则域映射」表登记）。
+- ≤3 条避坑 → 对应 `.pi/rules/<域>.md`（无对应文件则新建并在 AGENTS.md「规则域映射」表登记，格式 = 模式页：问题+根因+证据+规避句，README §5.5）。
 - 0–1 条设计决定 → `Blueprint.md`（范式层 → `README.md`，需用户批准）。
 - 删除已完成任务的计划文件；失败任务的计划连同裁决留档，供换会话续跑。
 - 失败典藏：FAIL 任务强制压缩一条失败模式（标题+规避句 ≤200 字符）→ 追加 `bcp/ledger.jsonl`（mode=failure）+ 对应 `.pi/rules/<域>.md`；只回注模式，不回注尸体（README §1）。
+- 晋升/拒绝 evolve 候选后，追加 ledger 裁决记录（`verdict=PROMOTED|REJECTED`，`target`=规则名，`source`=来源失败模式，README §4.5）——⑥ 节回放，防重复提案。
 - 技能沉淀默认文本轨道 `deliverables/SKILL.md`；Python 编译仅显式 `--compile-python` 或验证集成功率 ≥95% 触发（README §2.4）。
 
 风格：直接、简洁、工程化；先结论，再必要说明。

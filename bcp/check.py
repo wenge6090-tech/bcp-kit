@@ -340,7 +340,7 @@ def r6_plan(plan_path: Path, *, run_accept: bool, collision: bool) -> None:
             ["git", "status", "--porcelain", "--untracked-files=all"],  # -uall：新目录折叠为目录级会漏对碰新文件
             cwd=ROOT, capture_output=True, text=True,
         ).stdout.splitlines()
-        raw_changed = {ln[3:].strip() for ln in out if len(ln) > 3}
+        raw_changed = {ln[3:].strip().strip('"') for ln in out if len(ln) > 3}  # strip 引号：git 对含空格/特殊字符路径加 C 风格引号，不剥则声明对不上
         # 豁免语义：excludes 路径不强制声明；但声明了就必须真改动。
         changed = {c for c in raw_changed if not c.startswith(excludes)}
         declared = {f for it in items for f in it.get("files", [])}

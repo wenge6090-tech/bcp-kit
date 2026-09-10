@@ -74,6 +74,7 @@ def main() -> int:
     gate_domains: set[str] = set()
     gate_files: dict[str, set[str]] = {}
     fail_open = 0
+    verdicts: list[tuple[str, str, str, str, str]] = []
 
     for r in recs:
         mode = r.get("mode", "")
@@ -90,6 +91,8 @@ def main() -> int:
                 fail_open += 1
             continue
         if mode == "evolve":
+            if r.get("verdict") in ("PROMOTED", "REJECTED"):  # §4.5 晋升裁决史（skill-impact 同构）
+                verdicts.append((str(r.get("ts", "")), str(r.get("verdict", "")), str(r.get("target", "")), str(r.get("source", "")), str(r.get("note", ""))))
             continue
         ts = parse_ts(str(r.get("ts", "")))
         for f in r.get("findings", []):
@@ -154,6 +157,17 @@ def main() -> int:
         lines.append(f"  {rule:42s} 窗口内={c}")
     if not strong:
         lines.append("  （无）")
+
+    lines.append("\n⑥ 晋升裁决史（PROMOTED/REJECTED，防重复提案；§4.5）")
+    for ts, v, tgt, src, note in verdicts:
+        entry = f"  {ts}  {v:9s} {tgt}"
+        if src:
+            entry += f"  源自失败模式「{src}」"
+        if note:
+            entry += f"  [{note}]"
+        lines.append(entry.rstrip())
+    if not verdicts:
+        lines.append("  （无——晋升候选经人批准/拒绝后按协议追加裁决记录，见 §9.1）")
 
     print("\n".join(lines))
 
