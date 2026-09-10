@@ -461,6 +461,24 @@ def selfcheck() -> int:
     lines.append("[R7 探索纯净]")
     item(bool(CFG.get("rule", {}).get("explore_purity")), "explore_purity 配置", "在", "bcp.toml 缺 [rule.explore_purity]——R7 空转")
 
+    # sleep 巡检节律（README §4.7）：活动量计数可见——腐烂从静默变可测量
+    n_commit = 0
+    try:
+        n_commit = int(subprocess.run(["git", "rev-list", "--count", "HEAD"], capture_output=True, text=True, cwd=ROOT).stdout.strip() or 0)
+    except Exception:
+        pass
+    n_last = 0
+    if LEDGER.exists():
+        for ln in LEDGER.read_text(encoding="utf-8").splitlines():
+            try:
+                r = json.loads(ln)
+            except json.JSONDecodeError:
+                continue
+            if r.get("mode") == "evolve":
+                n_last = int(r.get("commits") or 0)
+    pulse = n_commit - n_last
+    item(pulse <= 30, "sleep 巡检节律", f"活动量 {pulse}/30 commit", f"活动量 {pulse} > 30 未巡检——跑 python3 bcp/evolve.py 落 REPORT 账即重置（/sleep 清单流见 README §4.7）")
+
     # ── R1-R4 项目专属
     lines.append("[R1-R4 项目专属（未配置 = 设计内跳过，非空转）]")
     for key, name in (

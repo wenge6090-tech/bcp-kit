@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 import time
 import tomllib
@@ -203,6 +204,10 @@ def main() -> int:
         "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "mode": "evolve",
         "verdict": "REPORT",
+        # sleep 触发对账基准（README §4.7）：gate 比较「当前 commit 数 − 此值 > 阈值」→ 催巡检
+        "commits": (lambda p: int(p.stdout.strip() or 0) if p.returncode == 0 else None)(
+            subprocess.run(["git", "rev-list", "--count", "HEAD"], capture_output=True, text=True, cwd=ROOT)
+        ),
         "fail": 0,
         "warn": len(findings),
         "findings": findings,

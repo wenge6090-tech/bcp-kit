@@ -52,3 +52,6 @@
 {"ts": "2026-09-10T21:58:55", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
 {"ts": "2026-09-10T22:06:25", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
 {"ts": "2026-09-10T22:06:25", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
+{"ts":"2026-09-10T23:08:31","mode":"gate","verdict":"FAIL_OPEN","fail":0,"warn":0,"findings":[],"kind":"domain","target":"bcp"}
+{"ts": "2026-09-10T23:11:38", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
+{"ts": "2026-09-10T23:11:38", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}

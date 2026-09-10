@@ -21,6 +21,7 @@
  */
 
 import { appendFileSync, existsSync, readFileSync, statSync } from "node:fs";
+import { execSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
@@ -36,9 +37,34 @@ const ROUTES: [prefix: string, domain: string][] = [
 
 /** 大文件整读拦截阈值（字节）。~20KB ≈ 5-7k tokens。0 = 关闭。 */
 const BIG_READ_KB = 20;
+
+/** sleep 闸触发阈值（commit 数，README §4.7）：自上次巡检（evolve REPORT 落账）以来的活动量。 */
+const SLEEP_COMMIT_THRESHOLD = 30;
 // ─────────────────────────────────────────────────────────────
 
 const BIG_READ_BYTES = BIG_READ_KB * 1024;
+
+// ── sleep 闸 helpers（README §4.7）：活动量 = 当前 commit 数 − 最后一条 evolve 记录的 commits 基准 ──
+function lastReportCommits(root: string): number {
+	try {
+		const lines = readFileSync(join(root, "bcp", "ledger.jsonl"), "utf-8").trim().split("\n");
+		for (let i = lines.length - 1; i >= 0; i--) {
+			const r = JSON.parse(lines[i]) as { mode?: string; commits?: number };
+			if (r.mode === "evolve") return typeof r.commits === "number" ? r.commits : 0;
+		}
+	} catch {
+		/* 冷启动/账本不可读 = 0（冷启动豁免自然成立） */
+	}
+	return 0;
+}
+
+function commitCount(root: string): number {
+	try {
+		return parseInt(execSync("git rev-list --count HEAD", { cwd: root }).toString().trim(), 10) || 0;
+	} catch {
+		return 0; // 非 git 项目 = 0 → 差值恒 ≤ 阈值，天然 fail-open
+	}
+}
 
 function localTs(): string {
 	const d = new Date();
@@ -74,10 +100,12 @@ export default function memoryGate(pi: ExtensionAPI) {
 	const injectedDomains = new Set<string>(); // 每域只拦一次
 	const bigReadWarned = new Set<string>(); // 每大文件只拦一次
 	let compacted = false; // compaction 后首次工具调用拦截一次
+	let sleepPulsed = false; // sleep 闸（§4.7）：会话只催一次巡检
 
 	pi.on("session_start", async () => {
 		injectedDomains.clear();
 		bigReadWarned.clear();
+		sleepPulsed = false;
 		compacted = false;
 	});
 
@@ -95,6 +123,22 @@ export default function memoryGate(pi: ExtensionAPI) {
 		const sessionCwd = ctx.cwd ?? process.cwd();
 		const root = projectRoot(sessionCwd); // 账本/ROUTES 基准 = 工具包根；相对路径解析仍按会话 cwd（agent 语义不变）
 		const abs = resolve(sessionCwd, raw);
+
+		// sleep 闸（README §4.7）：活动量超阈 → 催一次巡检（正反旋转：阴对账列清单，阳执行打勾，元独占裁决）
+		if (!sleepPulsed) {
+			sleepPulsed = true;
+			if (commitCount(root) - lastReportCommits(root) > SLEEP_COMMIT_THRESHOLD) {
+				logGate(root, "sleep", "pulse", "INJECTED");
+				return {
+					block: true,
+					reason:
+						`[memory-gate] sleep 闸：自上次巡检以来活动量已超 ${SLEEP_COMMIT_THRESHOLD} 个 commit——液态经验在积压，固态储层待归一化。` +
+						`执行 sleep 巡检（/sleep 命令或按 README §4.7 清单流）：机械对账（evolve.py + check.py --selfcheck）→ 列清单 → 元逐条裁决 → 打勾 → ` +
+						`清单完成即重跑 evolve.py 落 REPORT 账（sleep 结束，本闸自动重置）。` +
+						`本次调用已标记已催，重发即放行。`,
+				};
+			}
+		}
 
 		// ③ compaction 恢复（优先级最高，且与域注入不冲突——放行本次调用，只附带注入）
 		if (compacted) {

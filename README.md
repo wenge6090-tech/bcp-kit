@@ -222,6 +222,15 @@ classDiagram
 - **set 语义红线**：死重判定只用「从未注入」（set 语义），禁用「注入计数低」推断死重——gate 每域每会话去重，计数天然低频，低计数 ≠ 死重。
 - **审计痕迹**：mode=evolve 记录增补 `cold_start` 布尔字段。
 
+### 4.7 Sleep 机制与命令（演化节律：正反旋转，逆转阴阳）
+
+> 设计动因：液态经验积压、储层熵增、工作流逃逸都依赖「有人记得跑巡检」——pi 无 cron，靠自觉必然衰减。sleep 把巡检从自觉变成节律：**agent 的代谢是 commit，不是墙钟**。
+
+- **触发（入睡）**：memory-gate 第 4 注入点（kind=sleep）——会话首调时检查活动量判据 `当前 commit 数 − 最后一条 evolve 记录的 commits 基准 > 30`，超阈则 block 一次注入提醒（重发即放行，会话只催一次）。冷启动豁免（无记录按 0 起算）；非 git 项目 commit=0 天然 fail-open。
+- **执行（清单流，/sleep 命令）**：① 机械对账（evolve.py + selfcheck，零 LLM）→ ② 列清单落盘 `bcp/sleep/<date>-sleep.md`（每条 `- [ ]` 含来源+建议处置）→ ③ **呈元逐条裁决（能垒，阳不得代裁：PROMOTED/REJECTED/降级/删除/挂起）** → ④ 执行+打勾 → ⑤ 清单全勾 → 删清单（过程可丢，账本留痕）。
+- **停止（睡醒）**：醒来 = 新的 evolve REPORT 记录落账（含 commits 对账基准）→ 判据自动归零。睡没睡、裁决了什么，全是账本上的行，不靠任何一方的自觉或记忆。
+- **对碰税 = 显式支付的维护代价**（同生物睡眠不是浪费）：对账即固化（液→固相变的节律入口），打勾即归一化（用进废退的执行面），落账即元觉知——系统在符号层持有一个自我状态模型，并按代谢节律自动发起对它的裁决。
+
 ## 5. 记忆分层（A 内核四层，宿主侧落地）
 
 > 设计动因：pi 无跨会话记忆，上下文文件即记忆。AGENTS.md 全量 42KB 常驻违反 §6 墙纪律；嵌套文件+自觉 read = 纪律依赖反模式（§7.5）。规则：按可靠性分四层，每条规则必须落一层，不允许无主散文。
@@ -343,7 +352,7 @@ classDiagram
 ### 8.2 落地状态
 
 - 实例落地状态不属本 spec（各项目自记，如 taiji 仓库的实例层，V83 已冻结）。
-- 本仓库（范式模板）：`bcp/` 对碰器（R5 引用完整性 / R6 计划对碰 / R7 探索纯净开箱即用；R1–R4 项目专属按需配置）+ `--selfcheck` 闸门空转自检；`.pi/` 工作流内核四步化 + memory-gate 三闸门（域规则 / 大文件附注 / compaction 恢复）+ pre-commit 提交闸门。
+- 本仓库（范式模板）：`bcp/` 对碰器（R5 引用完整性 / R6 计划对碰 / R7 探索纯净开箱即用；R1–R4 项目专属按需配置）+ `--selfcheck` 闸门空转自检；`.pi/` 工作流内核四步化 + memory-gate 四闸门（域规则 / 大文件附注 / compaction 恢复 / sleep 节律）+ pre-commit 提交闸门。
 - 未落地候选（范式承诺 vs 机械现状，按 §4.2 攒证据后凝结）：C→A/B 回流弱信号（§2.1）、对碰经验层 soft violation（§3）、B→P 覆盖检查（§2.1，当前仅锚解析）、运行时文本技能类型（§2.4）。
 
 ### 8.3 宿主-被试主从定位（V81）
@@ -377,7 +386,7 @@ classDiagram
 | `static` | check.py | 不带 `--plan` 的静态扫描（pre-commit 提交闸门跑的就是这个） |
 | `plan` | check.py | `--plan` 计划检查（含 accept 命令真实执行） |
 | `plan+collision` | check.py | 再加 git 双向对碰：声明了没改 / 改了没声明，双向都 FAIL |
-| `gate` | memory-gate 扩展 | 四种事件，看 `kind` 区分：`domain`（首次触碰某代码域，强制注入该域规则）；`big-read`（整读 >20KB 文件的定位提醒）；`compact-restore`（会话压缩后恢复进度提示）；`skill-recall`（读 `deliverables/*/SKILL.md` 正文 = 技能被召回，纯记账不拦截） |
+| `gate` | memory-gate 扩展 | 五种事件，看 `kind` 区分：`domain`（首次触碰某代码域，强制注入该域规则）；`big-read`（整读 >20KB 文件的定位提醒）；`compact-restore`（会话压缩后恢复进度提示）；`skill-recall`（读 `deliverables/*/SKILL.md` 正文 = 技能被召回，纯记账不拦截）；`sleep`（活动量超阈，催一次巡检，§4.7） |
 | `evolve` | evolve.py | 三种：**REPORT**=演化报告器运行的审计记录（本次产出哪些候选）；**PROMOTED / REJECTED**=晋升/结晶候选经人批准/拒绝后的裁决记录，字段 `target`=规则名或技能名（技能裁决必标 `kind:"skill"`）、`source`=来源失败模式标题（可选溯源）、`note`=原因——⑥ 节回放防重复提案；kind=skill 的 PROMOTED 同时是技能注册凭证，⑦ 节与 deliverables 目录双向对碰 |
 | `failure` | agent 按协议追加 | 任务以 FAIL 收尾时的**失败典藏**：`{title, avoidance, domain}` = 标题 + 规避句（≤200 字符）+ 所属域。只留模式，不留过程——这是给后续任务回注的「别再踩」规则 |
 
@@ -412,7 +421,7 @@ classDiagram
 
 ### 9.4 `--selfcheck`（健康自检）
 
-装完或换宿主后跑一次：报告各闸门依赖是否就绪。`IDLE` = 依赖缺失、闸门空转（形同虚设）；`OK` = 就绪。退出码恒 0（报告非裁决）。
+装完或换宿主后跑一次：报告各闸门依赖是否就绪。`IDLE` = 依赖缺失、闸门空转（形同虚设）；`OK` = 就绪。含 sleep 巡检节律项（活动量 x/30 commit，超阈 IDLE——跑 evolve.py 落账即重置）。退出码恒 0（报告非裁决）。
 
 ## 10. 使用指南
 
@@ -433,7 +442,7 @@ BCP 的三相循环为「人不在场 + 无现成裁判」的开放域设计（�
 | 层 | 件 | 归属 |
 |---|---|---|
 | 工具包 · **真宿主无关** | 本 README（含范式 spec） · `plan.md` · `bcp/`（check.py / bcp.toml / evolve.py / ledger） · `deliverables/`（技能资产，可选轨道） | 复制到任何项目，只依赖 Python 3.11+ 标准库（§8.1 最小契约） |
-| 工具包 · **pi 专属适配** | `.pi/`（APPEND_SYSTEM 工作流 + memory-gate 三闸门 + bcp-check + prompts） | **换宿主 = 必须重写等价的机械注入层**，否则 §5 四层记忆分层与 §6 墙纪律只落地一半 |
+| 工具包 · **pi 专属适配** | `.pi/`（APPEND_SYSTEM 工作流 + memory-gate 四闸门 + bcp-check + prompts） | **换宿主 = 必须重写等价的机械注入层**，否则 §5 四层记忆分层与 §6 墙纪律只落地一半 |
 | 项目实例 | `AGENTS.md`（项目索引） · `Blueprint.md`（可选设计文档） · `.pi/rules/*.md` · `bcp/plans/` | 各项目自养 |
 
 `kit/` 为分发件（实例骨架 + pre-commit 模板），**不随项目复制**（防副本腐烂，§7.4）。
