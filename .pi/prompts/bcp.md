@@ -1,5 +1,5 @@
 ---
-description: 画设计蓝图（Mermaid 总装图 + 部件图），先读 Blueprint.md（项目设计定论文档，无则先建）
+description: 画设计蓝图（Mermaid 总装图 + 部件图），先读 Blueprint.md（项目设计决定文档，无则先建）
 argument-hint: "[变更描述，可省略]"
 ---
 # 设计蓝图

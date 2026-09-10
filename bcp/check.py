@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""BCP 机械检查器 v0 —— 零 LLM（范式背景见 BCP.md）。
+"""BCP 机械检查器 v0 —— 零 LLM（范式背景见 README.md）。
 
 用法：
   ./bcp/check.py                    # 静态规则集（R1-R5）
@@ -70,7 +70,7 @@ def _unquote(s: str) -> str:
     return s
 
 
-# ---------------------------------------------------------------- R1 六触点（示例源自 taiji 分流案例，BCP.md §5.4）
+# ---------------------------------------------------------------- R1 六触点（示例源自 taiji 分流案例，README.md §5.4）
 def r1_builtin_touchpoints() -> None:
     rule = "R1-builtin-touchpoints"
     cfg = CFG.get("rule", {}).get("builtin_touchpoints")
@@ -304,7 +304,7 @@ def r6_plan(plan_path: Path, *, run_accept: bool, collision: bool) -> None:
         if not raw:
             warn(rule, f"{pid}: 未声明 blueprint 锚（建议引用章节号）")
             continue
-        # 锚格式：`§x.y`（默认 Blueprint.md）或 `文件§x.y`（如 BCP.md§2.3）
+        # 锚格式：`§x.y`（默认 Blueprint.md）或 `文件§x.y`（如 README.md§2.3）
         doc, _, sec = raw.partition("§")
         doc = doc.strip() or "Blueprint.md"
         sec = sec.strip()
@@ -400,7 +400,7 @@ def selfcheck() -> int:
     lines.append("[R6 计划对碰]")
     item((ROOT / "bcp" / "plans").exists(), "计划目录 bcp/plans/", "在", "缺失——/plan 产出无落点（首次 /plan 自动建亦可）")
     if not (ROOT / "Blueprint.md").exists():
-        note("Blueprint.md", "无——计划 blueprint 锚用 `文件§x.y` 格式（如 BCP.md§4）或先建蓝图（可选件，§2 B→P 接缝）")
+        note("Blueprint.md", "无——计划 blueprint 锚用 `文件§x.y` 格式（如 README.md§4）或先建蓝图（可选件，§2 B→P 接缝）")
     n_plan = 0
     if LEDGER.exists():
         for ln in LEDGER.read_text(encoding="utf-8").splitlines():

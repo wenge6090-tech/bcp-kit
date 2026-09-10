@@ -1,13 +1,13 @@
 # BCP 对碰器规则配置（模板）— 阴·机械对碰的规则库
 # 移植到新项目：本文件随 bcp/ 一并复制，R1–R4 为项目专属结构性规则（未配置 = 自动跳过），
 # 按项目沉淀逐步启用（§4.2 晋升算子：散文规则反复违反且可机械化 → 凝结为配置 + check 实现）。
-# 规则 id 标注范式定论来源（BCP.md 章节；R1–R4 示例源自 taiji 分流案例，见 BCP.md §5.4）。
+# 规则 id 标注范式约定来源（README.md 章节；R1–R4 示例源自 taiji 分流案例，见 README.md §5.4）。
 
 # ---------- 通用规则（模板自带，开箱即用） ----------
 
 [rule.doc_ghost_paths]
 # R5 引用完整性：文档反引号内断言的仓库路径必须存在（防幽灵基建）
-docs = ["AGENTS.md", "BCP.md", ".pi/APPEND_SYSTEM.md", ".pi/rules/*.md"]
+docs = ["AGENTS.md", "README.md", ".pi/APPEND_SYSTEM.md", ".pi/rules/*.md"]
 # 运行时数据 / 仓库外产物路径，不作仓库存在性断言（按项目增补）
 # bcp/ledger.jsonl = 范式自产运行时文件：首跑 check 前不存在属常态（新项目从零建 bcp/ 勿断言）
 ignore_prefixes = ["target/", "node_modules/", "deliverables/", "tasks/", "prompts/", "verifications/", "bcp/ledger.jsonl"]
@@ -15,12 +15,12 @@ ignore_prefixes = ["target/", "node_modules/", "deliverables/", "tasks/", "promp
 root_map = {}
 
 [rule.explore_purity]
-# R7 探索纯净：产出原始轨迹（SKILL.md）/ skill_evolution 任务必须 mode: explore（BCP §2.3）
+# R7 探索纯净：产出原始轨迹（SKILL.md）/ skill_evolution 任务必须 mode: explore（README §2.3）
 raw_track_markers = ["SKILL.md"]
 
 [rule.plan_collision]
 # --collision 模式下豁免对碰的路径（范式文档自身随任务变更属正常）
-excludes = ["bcp/", ".pi/", "plan.md", "BCP.md", "AGENTS.md", "Blueprint.md", "bcp/ledger.jsonl"]
+excludes = ["bcp/", ".pi/", "plan.md", "README.md", "AGENTS.md", "Blueprint.md", "bcp/ledger.jsonl"]
 
 [rule.demote]
 # §4.5 降级豁免：结构性规则（违反即大改，命中天然低频）不参与命中数降级
@@ -29,7 +29,7 @@ exempt_prefixes = ["R1-", "R2-", "R3-", "R4-"]
 # ---------- 项目专属规则（示例配置，按项目启用；删除整节 = 规则跳过） ----------
 
 # [rule.builtin_touchpoints]
-# R1 六触点（示例源自 taiji 分流案例，BCP.md §5.4）：每个 builtin 工具的执行体存在 + 全部注册点出现（N 触点按项目实际增减）
+# R1 六触点（示例源自 taiji 分流案例，README.md §5.4）：每个 builtin 工具的执行体存在 + 全部注册点出现（N 触点按项目实际增减）
 # builtins = ["read", "write", "edit", "bash", "search", "webfetch"]
 # exec_dir = "src/agents/tools/skills"
 # registries = ["src/agents/tools/skills/mod.rs", "src/types/verification.rs"]
