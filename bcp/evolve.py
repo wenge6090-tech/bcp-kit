@@ -75,13 +75,18 @@ def main() -> int:
     gate_files: dict[str, set[str]] = {}
     fail_open = 0
     verdicts: list[tuple[str, str, str, str, str]] = []
+    skill_recall: Counter[str] = Counter()
 
     for r in recs:
         mode = r.get("mode", "")
         if mode == "gate":
+            kind = str(r.get("kind", "domain"))
+            if kind == "skill-recall":  # §2.4 技能召回事件（不参与 §4.6 冷启动判定——冷启动只看域注入）
+                skill_recall[str(r.get("target") or r.get("domain") or "?")] += 1
+                continue
             # 只统计域注入（kind=domain）：big-read/compact-restore 无 domain，计入会污染
             # §4.6 冷启动判定与域统计。字段兼容：旧记录仅 target（memory-gate 曾写 kind/target）。
-            if str(r.get("kind", "domain")) != "domain":
+            if kind != "domain":
                 continue
             d = str(r.get("domain") or r.get("target") or "?")
             gate_by_domain[d] += 1
@@ -168,6 +173,13 @@ def main() -> int:
         lines.append(entry.rstrip())
     if not verdicts:
         lines.append("  （无——晋升候选经人批准/拒绝后按协议追加裁决记录，见 §9.1）")
+
+    lines.append("\n⑦ 技能资产（deliverables/*/SKILL.md，召回=skill-recall 事件，§2.4）")
+    skills = sorted(p.parent.name for p in (ROOT / "deliverables").glob("*/SKILL.md")) if (ROOT / "deliverables").is_dir() else []
+    for s in skills:
+        lines.append(f"  deliverables/{s}/SKILL.md  召回={skill_recall.get(s, 0)}")
+    if not skills:
+        lines.append("  （无技能资产——可选轨道，模板常态）")
 
     print("\n".join(lines))
 

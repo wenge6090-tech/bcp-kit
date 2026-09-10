@@ -109,6 +109,7 @@
 - **默认产物双轨**：阳产出 `deliverables/SKILL.md`（纯文本规则 + Frontmatter 元数据）+ `deliverables/declaration.yaml`（结构化自声明）。
 - **编译降级为可选优化**：Python 固化仅在 ① 人类显式 `--compile-python`，或 ② 文本规则验证集成功率 ≥95% 时触发一次；其余场景文本即技能。
 - **与 taiji 蓝图旧规⑥不冲突**（档案）：文本技能走 prompt 注入轨道，不是机械执行体——「执行体统一 Python」继续成立；运行时文本技能类型为候选扩展（§8.2 待做）。
+- **机械衔接**：① 结构闸 **R8**（check.py）——`deliverables/<name>/SKILL.md` 必须带 frontmatter 三件套（`name`/`description`/`validation`）+「适用条件」节 +「溯源」节，无结构不结晶（无目录静默跳过）；② 召回挂载——pi 宿主在 `.pi/settings.json` 挂 `deliverables`（description 常驻系统提示、正文按需读 = §5.5 匹配召回）；③ 召回记账——memory-gate 对读技能正文追加 `kind=skill-recall` 事件，evolve ⑦ 节统计（召回=0 = 死重候选）。
 
 ## 3. 阴：机械对碰
 
@@ -149,7 +150,7 @@
 | 生产者 | mode | 内容 |
 |---|---|---|
 | check.py | static / plan / plan+collision | findings[rule,sev,msg]（详见 §9.1） |
-| memory-gate | gate | 首次注入事件 {domain, file}；append 失败仅跳过，绝不阻断工具执行 |
+| memory-gate | gate | 注入/召回事件：域注入 {domain, file}；技能召回 {kind:"skill-recall", target:<技能名>}；append 失败仅跳过，绝不阻断工具执行 |
 | evolve.py | evolve | 每次报告的审计痕迹（候选清单） |
 | 固化回流·失败典藏 | failure | 压缩失败模式 {title, avoidance, domain}（§1） |
 
@@ -178,7 +179,7 @@ flowchart LR
 ### 4.4 evolve.py 报告器（零 LLM，纯标准库，守 §8.1 移植契约）
 
 - 输入：`bcp/ledger.jsonl` + check.py 源中的规则名注册表（正则机械提取 seam 表键，不建副本）+ `.pi/rules/` 清单。
-- 输出：纯文本报告六节（见 §9.3）。
+- 输出：纯文本报告七节（见 §9.3）。
 - 参数：`--window N`（天，默认 30）、`--min-hits M`（默认 3）、`--ledger <path>`（默认 `bcp/ledger.jsonl`，测试可指向空账本验冷启动）。退出码恒 0（报告非裁决）。
 - 每次运行追加 mode=evolve 审计记录（候选以 findings WARN 形式入账）。
 
@@ -376,7 +377,7 @@ classDiagram
 | `static` | check.py | 不带 `--plan` 的静态扫描（pre-commit 提交闸门跑的就是这个） |
 | `plan` | check.py | `--plan` 计划检查（含 accept 命令真实执行） |
 | `plan+collision` | check.py | 再加 git 双向对碰：声明了没改 / 改了没声明，双向都 FAIL |
-| `gate` | memory-gate 扩展 | 三种注入事件，看 `kind` 区分：`domain`（首次触碰某代码域，强制注入该域规则）；`big-read`（整读 >20KB 文件的定位提醒）；`compact-restore`（会话压缩后恢复进度提示） |
+| `gate` | memory-gate 扩展 | 四种事件，看 `kind` 区分：`domain`（首次触碰某代码域，强制注入该域规则）；`big-read`（整读 >20KB 文件的定位提醒）；`compact-restore`（会话压缩后恢复进度提示）；`skill-recall`（读 `deliverables/*/SKILL.md` 正文 = 技能被召回，纯记账不拦截） |
 | `evolve` | evolve.py | 两种：**REPORT**=演化报告器运行的审计记录（本次产出哪些候选）；**PROMOTED / REJECTED**=晋升候选经人批准/拒绝后的裁决记录，字段 `target`=规则名、`source`=来源失败模式标题（可选溯源）、`note`=原因——⑥ 节回放，被拒候选勿重复提案 |
 | `failure` | agent 按协议追加 | 任务以 FAIL 收尾时的**失败典藏**：`{title, avoidance, domain}` = 标题 + 规避句（≤200 字符）+ 所属域。只留模式，不留过程——这是给后续任务回注的「别再踩」规则 |
 
@@ -391,10 +392,11 @@ classDiagram
 | R5 doc-ghost-paths | 文档反引号里的仓库路径必须存在（防幽灵基建） | 开箱即用 |
 | R6 plan-collision | 计划锚引用真实章节 + accept 全绿 + git 双向对碰 | 开箱即用 |
 | R7 explore-purity | 产出 SKILL.md / skill_evolution 的任务必须 `mode: explore` | 开箱即用 |
+| R8 skill-contract | `deliverables/*/SKILL.md` 结构：frontmatter 三件套（name/description/validation）+ 适用条件节 + 溯源节 | 开箱即用（无目录静默跳过） |
 
 每条 FAIL 裁决自带修复方向：改代码 / 改文档 / 改计划（R6 按条目标注）。
 
-### 9.3 evolve.py 报告六节
+### 9.3 evolve.py 报告七节
 
 定期手动跑，产出晋升/降级**候选数据**（报告非裁决，裁决权在元，§4.5）：
 
@@ -406,6 +408,7 @@ classDiagram
 | ④ 死重候选 | 从未被注入的规则文件 | 冷启动期（无任何域注入事件）改列「待积累」，不作死重判定 |
 | ⑤ 强化证据 | 窗口内高频 FAIL 规则 | 同 ①，聚焦近期 |
 | ⑥ 晋升裁决史 | 历次 PROMOTED/REJECTED 裁决记录 | 被拒候选勿重复提案（WikiSkill skill-impact 同构） |
+| ⑦ 技能资产 | deliverables/*/SKILL.md 清单 + 召回计数 | 召回=0 的技能是死重候选（结晶后没人用 = 该回炉或删除） |
 
 ### 9.4 `--selfcheck`（健康自检）
 
@@ -429,7 +432,7 @@ BCP 的三相循环为「人不在场 + 无现成裁判」的开放域设计（�
 
 | 层 | 件 | 归属 |
 |---|---|---|
-| 工具包 · **真宿主无关** | 本 README（含范式 spec） · `plan.md` · `bcp/`（check.py / bcp.toml / evolve.py / ledger） | 复制到任何项目，只依赖 Python 3.11+ 标准库（§8.1 最小契约） |
+| 工具包 · **真宿主无关** | 本 README（含范式 spec） · `plan.md` · `bcp/`（check.py / bcp.toml / evolve.py / ledger） · `deliverables/`（技能资产，可选轨道） | 复制到任何项目，只依赖 Python 3.11+ 标准库（§8.1 最小契约） |
 | 工具包 · **pi 专属适配** | `.pi/`（APPEND_SYSTEM 工作流 + memory-gate 三闸门 + bcp-check + prompts） | **换宿主 = 必须重写等价的机械注入层**，否则 §5 四层记忆分层与 §6 墙纪律只落地一半 |
 | 项目实例 | `AGENTS.md`（项目索引） · `Blueprint.md`（可选设计文档） · `.pi/rules/*.md` · `bcp/plans/` | 各项目自养 |
 

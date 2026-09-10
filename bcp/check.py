@@ -288,6 +288,34 @@ def _parse_plan_header(text: str) -> dict | None:
 _SYNTAX_ERR = re.compile(r"(unexpected EOF|未预期的 EOF|syntax error|语法错误)", re.I)
 
 
+def r8_skill_contract() -> None:
+    """R8-skill-contract（README §2.4）：技能结构闸——结晶的机械面。
+
+    技能 = 液→固相变产物（§4.2 结晶算子）：固化资产必须自带适用条件、验证凭证、溯源，
+    否则不可召回（散文不可结晶）。无 deliverables/ 静默跳过（可选轨道，模板常态，同 R5 glob 语义）。
+    """
+    rule = "R8-skill-contract(§2.4)"
+    skills_dir = ROOT / "deliverables"
+    if not skills_dir.is_dir():
+        return
+    for skill_md in sorted(skills_dir.glob("*/SKILL.md")):
+        rel = skill_md.relative_to(ROOT)
+        text = skill_md.read_text(encoding="utf-8")
+        m = re.match(r"^---\s*\n(.*?)\n---", text, re.S)
+        if not m:
+            fail(rule, f"{rel}: 缺 frontmatter（→ 改文档：name/description/validation 三件套）")
+            continue
+        fm = m.group(1)
+        for field in ("name", "description", "validation"):
+            if not re.search(rf"^{field}:\s*\S", fm, re.M):
+                fail(rule, f"{rel}: frontmatter 缺 {field}（→ 改文档）")
+        body = text[m.end():]
+        if not re.search(r"^#{1,3}\s*(适用|When to [Aa]pply)", body, re.M):
+            fail(rule, f"{rel}: 缺「适用条件」节（→ 改文档：何时用/不用）")
+        if not re.search(r"^#{1,3}\s*(溯源|Source)", body, re.M):
+            fail(rule, f"{rel}: 缺「溯源」节（→ 改文档：源自哪条失败模式/规则/任务，对应 §4.5 PROMOTED 记录）")
+
+
 def r6_plan(plan_path: Path, *, run_accept: bool, collision: bool) -> None:
     rule = "R6-plan-collision"
     plan = _parse_plan_header(read(plan_path))
@@ -399,6 +427,15 @@ def selfcheck() -> int:
     # ── R6 计划对碰
     lines.append("[R6 计划对碰]")
     item((ROOT / "bcp" / "plans").exists(), "计划目录 bcp/plans/", "在", "缺失——/plan 产出无落点（首次 /plan 自动建亦可）")
+
+    # 技能召回挂载（可选轨道，README §2.4）：有技能资产但 pi 未挂载 = 召回空转（技能永不进 description 索引）
+    skill_assets = sorted((ROOT / "deliverables").glob("*/SKILL.md")) if (ROOT / "deliverables").is_dir() else []
+    if skill_assets:
+        settings = ROOT / ".pi" / "settings.json"
+        mounted = settings.exists() and "deliverables" in settings.read_text(encoding="utf-8")
+        item(mounted, "技能召回挂载", f"{len(skill_assets)} 个技能资产已挂载 pi 召回（.pi/settings.json skills）", "deliverables/ 有 SKILL.md 但 .pi/settings.json 未挂载——技能永不被召回（§5.5 匹配召回空转）")
+    else:
+        note("技能储层 deliverables/", "无技能资产（可选轨道，模板常态；首个 SKILL.md 结晶后 R8 自动接管）")
     if not (ROOT / "Blueprint.md").exists():
         note("Blueprint.md", "无——计划 blueprint 锚用 `文件§x.y` 格式（如 README.md§4）或先建蓝图（可选件，§2 B→P 接缝）")
     n_plan = 0
@@ -447,6 +484,7 @@ def main() -> int:
     r3_dead_fields()
     r4_wording()
     r5_doc_ghost_paths()
+    r8_skill_contract()
     if args.plan:
         r6_plan(args.plan, run_accept=not args.no_exec, collision=args.collision)
 
@@ -458,6 +496,7 @@ def main() -> int:
         "R5-doc-ghost-paths(引用完整性)": "改文档",
         "R6-plan-collision": "见各条",
         "R7-explore-purity(§2.3)": "改计划",
+        "R8-skill-contract(§2.4)": "改文档",
     }
     for r, s, m in findings:
         print(f"[{s}] {r} [{seam.get(r, '')}]\n    {m}")

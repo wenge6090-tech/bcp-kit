@@ -98,6 +98,11 @@ export default function memoryGate(pi: ExtensionAPI) {
 		}
 
 		// ② 大文件整读附注
+		// 技能召回记账（README §4.3/§9.1）：读技能正文 = 匹配召回事件，只记账不拦截（§5.5 漏斗第三层）
+		if (event.toolName === "read") {
+			const dm = abs.match(/deliverables[/\\][^/\\]+[/\\]SKILL\.md$/);
+			if (dm) logGate(cwd, "skill-recall", dm[1], "READ");
+		}
 		if (event.toolName === "read" && BIG_READ_BYTES > 0) {
 			try {
 				if (statSync(abs).size > BIG_READ_BYTES && !bigReadWarned.has(abs)) {

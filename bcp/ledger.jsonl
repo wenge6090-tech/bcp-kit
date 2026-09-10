@@ -40,3 +40,9 @@
 {"ts": "2026-09-10T17:27:00", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
 {"ts": "2026-09-10T17:27:11", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
 {"ts": "2026-09-10T17:27:11", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
+{"ts":"2026-09-10T21:30:56","mode":"gate","verdict":"INJECTED","fail":0,"warn":0,"findings":[],"kind":"domain","target":"bcp","domain":"bcp","file":"/home/vingo/vingo/bcp-kit/.pi/extensions/memory-gate.ts"}
+{"ts":"2026-09-10T21:32:33","mode":"gate","verdict":"INJECTED","fail":0,"warn":0,"findings":[],"kind":"big-read","target":"/home/vingo/vingo/bcp-kit/bcp/check.py"}
+{"ts": "2026-09-10T21:34:23", "mode": "static", "verdict": "FAIL", "fail": 4, "warn": 0, "findings": [{"rule": "R8-skill-contract(§2.4)", "sev": "FAIL", "msg": "deliverables/bad-skill/SKILL.md: frontmatter 缺 description（→ 改文档）"}, {"rule": "R8-skill-contract(§2.4)", "sev": "FAIL", "msg": "deliverables/bad-skill/SKILL.md: frontmatter 缺 validation（→ 改文档）"}, {"rule": "R8-skill-contract(§2.4)", "sev": "FAIL", "msg": "deliverables/bad-skill/SKILL.md: 缺「适用条件」节（→ 改文档：何时用/不用）"}, {"rule": "R8-skill-contract(§2.4)", "sev": "FAIL", "msg": "deliverables/bad-skill/SKILL.md: 缺「溯源」节（→ 改文档：源自哪条失败模式/规则/任务，对应 §4.5 PROMOTED 记录）"}]}
+{"ts": "2026-09-10T21:34:23", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
+{"ts": "2026-09-10T21:34:42", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
+{"ts": "2026-09-10T21:34:42", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
