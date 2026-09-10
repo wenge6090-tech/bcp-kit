@@ -20,8 +20,8 @@
  * （mode=gate，写失败静默跳过）。
  */
 
-import { appendFileSync, readFileSync, statSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { appendFileSync, existsSync, readFileSync, statSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 // ── 按项目配置 ────────────────────────────────────────────────
@@ -44,6 +44,18 @@ function localTs(): string {
 	const d = new Date();
 	const p = (n: number) => String(n).padStart(2, "0");
 	return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+// 工具包根归一化（防乌龙）：ctx.cwd = pi 启动目录，子目录启动会把账本写到 <子目录>/bcp/（分裂）。
+// 向上找范式件特征（.pi/APPEND_SYSTEM.md），找不到则返回原目录（fail-open，与非工具包项目兼容）。
+function projectRoot(start: string): string {
+	let dir = start;
+	while (true) {
+		if (existsSync(join(dir, ".pi", "APPEND_SYSTEM.md"))) return dir;
+		const parent = dirname(dir);
+		if (parent === dir) return start;
+		dir = parent;
+	}
 }
 
 function logGate(cwd: string, kind: string, target: string, verdict: string, extra?: Record<string, unknown>) {
@@ -80,13 +92,14 @@ export default function memoryGate(pi: ExtensionAPI) {
 		}
 		const raw = (event.input as { path?: string }).path;
 		if (!raw) return;
-		const cwd = ctx.cwd ?? process.cwd();
-		const abs = resolve(cwd, raw);
+		const sessionCwd = ctx.cwd ?? process.cwd();
+		const root = projectRoot(sessionCwd); // 账本/ROUTES 基准 = 工具包根；相对路径解析仍按会话 cwd（agent 语义不变）
+		const abs = resolve(sessionCwd, raw);
 
 		// ③ compaction 恢复（优先级最高，且与域注入不冲突——放行本次调用，只附带注入）
 		if (compacted) {
 			compacted = false;
-			logGate(cwd, "compact-restore", raw, "INJECTED");
+			logGate(root, "compact-restore", raw, "INJECTED");
 			return {
 				block: true,
 				reason:
@@ -101,14 +114,14 @@ export default function memoryGate(pi: ExtensionAPI) {
 		// 技能召回记账（README §4.3/§9.1）：读技能正文 = 匹配召回事件，只记账不拦截（§5.5 漏斗第三层）
 		if (event.toolName === "read") {
 			const dm = abs.match(/deliverables[/\\][^/\\]+[/\\]SKILL\.md$/);
-			if (dm) logGate(cwd, "skill-recall", dm[1], "READ");
+			if (dm) logGate(root, "skill-recall", dm[1], "READ");
 		}
 		if (event.toolName === "read" && BIG_READ_BYTES > 0) {
 			try {
 				if (statSync(abs).size > BIG_READ_BYTES && !bigReadWarned.has(abs)) {
 					bigReadWarned.add(abs);
 					const lines = readFileSync(abs, "utf-8").split("\n").length;
-					logGate(cwd, "big-read", raw, "INJECTED");
+					logGate(root, "big-read", raw, "INJECTED");
 					return {
 						block: true,
 						reason:
@@ -123,7 +136,7 @@ export default function memoryGate(pi: ExtensionAPI) {
 		}
 
 		// ① 域规则注入
-		const hit = ROUTES.find(([prefix]) => abs.startsWith(resolve(cwd, prefix)));
+		const hit = ROUTES.find(([prefix]) => abs.startsWith(resolve(root, prefix)));
 		if (!hit) return;
 		const domain = hit[1];
 		if (injectedDomains.has(domain)) return;
@@ -133,12 +146,12 @@ export default function memoryGate(pi: ExtensionAPI) {
 			rules = readFileSync(join(cwd, ".pi", "rules", `${domain}.md`), "utf-8");
 		} catch {
 			ctx.ui?.notify?.(`memory-gate: 规则文件缺失 .pi/rules/${domain}.md（fail-open 放行）`, "warning");
-			logGate(cwd, "domain", domain, "FAIL_OPEN");
+			logGate(root, "domain", domain, "FAIL_OPEN");
 			injectedDomains.add(domain);
 			return;
 		}
 		injectedDomains.add(domain);
-		logGate(cwd, "domain", domain, "INJECTED", { domain, file: abs }); // §4.3 {domain, file}
+		logGate(root, "domain", domain, "INJECTED", { domain, file: abs }); // §4.3 {domain, file}
 		return {
 			block: true,
 			reason:

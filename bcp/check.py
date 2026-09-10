@@ -428,12 +428,21 @@ def selfcheck() -> int:
     lines.append("[R6 计划对碰]")
     item((ROOT / "bcp" / "plans").exists(), "计划目录 bcp/plans/", "在", "缺失——/plan 产出无落点（首次 /plan 自动建亦可）")
 
-    # 技能召回挂载（可选轨道，README §2.4）：有技能资产但 pi 未挂载 = 召回空转（技能永不进 description 索引）
+    # 技能召回挂载（可选轨道，README §2.4）：pi settings 路径相对 .pi 解析——必须验证解析后指向真实储层，
+    # 只 grep 字符串会漏掉「路径写错但词对了」的乌龙（实测发生：deliverables 写成相对 cwd，实际解析到 .pi/deliverables）
     skill_assets = sorted((ROOT / "deliverables").glob("*/SKILL.md")) if (ROOT / "deliverables").is_dir() else []
     if skill_assets:
         settings = ROOT / ".pi" / "settings.json"
-        mounted = settings.exists() and "deliverables" in settings.read_text(encoding="utf-8")
-        item(mounted, "技能召回挂载", f"{len(skill_assets)} 个技能资产已挂载 pi 召回（.pi/settings.json skills）", "deliverables/ 有 SKILL.md 但 .pi/settings.json 未挂载——技能永不被召回（§5.5 匹配召回空转）")
+        mounted = False
+        if settings.exists():
+            try:
+                for s in json.loads(settings.read_text(encoding="utf-8")).get("skills") or []:
+                    if (ROOT / ".pi" / s).resolve() == (ROOT / "deliverables").resolve():
+                        mounted = True
+                        break
+            except (json.JSONDecodeError, OSError):
+                pass
+        item(mounted, "技能召回挂载", f"{len(skill_assets)} 个技能资产已挂载 pi 召回（解析验证通过）", "deliverables/ 有 SKILL.md 但 .pi/settings.json 未正确挂载（注意：路径相对 .pi 解析，应写 ../deliverables）——技能永不被召回（§5.5 匹配召回空转）")
     else:
         note("技能储层 deliverables/", "无技能资产（可选轨道，模板常态；首个 SKILL.md 结晶后 R8 自动接管）")
     if not (ROOT / "Blueprint.md").exists():

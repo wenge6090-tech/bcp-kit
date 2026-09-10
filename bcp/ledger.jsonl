@@ -50,3 +50,5 @@
 {"ts": "2026-09-10T21:58:54", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
 {"ts": "2026-09-10T21:58:54", "mode": "evolve", "verdict": "REPORT", "fail": 0, "warn": 4, "findings": [{"rule": "evolve-report", "sev": "WARN", "msg": "降级候选: R7-explore-purity(§2.3)"}, {"rule": "evolve-report", "sev": "WARN", "msg": "强化证据: R5-doc-ghost-paths(引用完整性) 窗口内28"}, {"rule": "evolve-report", "sev": "WARN", "msg": "强化证据: R6-plan-collision 窗口内10"}, {"rule": "evolve-report", "sev": "WARN", "msg": "强化证据: R8-skill-contract(§2.4) 窗口内4"}], "window": 30, "min_hits": 3, "cold_start": false}
 {"ts": "2026-09-10T21:58:55", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
+{"ts": "2026-09-10T22:06:25", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
+{"ts": "2026-09-10T22:06:25", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": []}
