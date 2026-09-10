@@ -1,6 +1,6 @@
 # <项目名> 核心索引（自动加载）
 
-> **A 内核（核心索引层）**：只存检索键与跨域硬约束。按域避坑细则在 `.pi/rules/*.md`，memory-gate 按代码域自动注入（tool_call 拦截）。
+> **A 内核（核心索引层）**：只存检索键与跨域硬约束。按域避坑细则在 `.pi/rules/*.md`，memory-gate 四闸门（域规则 / 大文件附注 / compaction 恢复 / sleep 节律）按代码域自动注入（tool_call 拦截）。
 > 范式 spec：`README.md`；工作流：`.pi/APPEND_SYSTEM.md`；设计决定：`Blueprint.md`（可选）。
 
 ## 文档分层
@@ -12,6 +12,7 @@
 | `README.md` | 范式 spec（A 内核 §5 / 双模注入 §2.3 / 技能契约 §2.4（液→固）/ 符号阀 §3） | 范式/流程问题时读 |
 | `AGENTS.md`（本文） | 实现事实核心索引 | 每次会话自动加载 |
 | `.pi/rules/*.md` | 按域避坑细则（储层） | memory-gate 自动注入 |
+| `.pi/prompts/` | /plan 与 /sleep 命令模板 | 手动触发工作流 |
 
 数据流：`Blueprint --plan--> 计划 --执行--> 代码`；经验回流 `.pi/rules/<域>.md` / `Blueprint.md`（设计决定需人批准）。
 

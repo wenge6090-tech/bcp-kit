@@ -14,7 +14,7 @@ mode: infer                   # 可选：explore | infer（缺省 infer）；产
 items:
   - id: P1
     blueprint: §5.2            # 必填：设计章节锚 `§x.y`（默认 Blueprint.md）或 `文件§x.y`（如 README.md§2.3）；悬空 = FAIL
-    files:                     # 必填：改哪些文件，精确到文件；声明了没改 / 改了没声明都算 FAIL
+    files:                     # 必填：改哪些文件，精确到文件；声明了没改 / 改了没声明都算 FAIL（删除目标不进 files——用 accept 断言 test ! -f，§9.2）
       - src/orchestration/compile.rs
     interfaces:                # 推荐：关键签名，到代码文件里确认
       - "pub fn enqueue_compile_task"

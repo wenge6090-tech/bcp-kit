@@ -390,7 +390,7 @@ classDiagram
 | R3 dead-fields | 已废弃字段无消费点 | 项目按需 |
 | R4 wording | 禁用措辞扫描 | 项目按需 |
 | R5 doc-ghost-paths | 文档反引号里的仓库路径必须存在（防幽灵基建） | 开箱即用 |
-| R6 plan-collision | 计划锚引用真实章节 + accept 全绿 + git 双向对碰 | 开箱即用 |
+| R6 plan-collision | 计划锚引用真实章节 + accept 全绿 + git 双向对碰（files=修改/新建目标；删除验收走 accept：`test ! -f`） | 开箱即用 |
 | R7 explore-purity | 产出 SKILL.md / skill_evolution 的任务必须 `mode: explore` | 开箱即用 |
 | R8 skill-contract | `deliverables/*/SKILL.md` 结构：frontmatter 三件套（name/description/validation）+ 适用条件节 + 溯源节 | 开箱即用（无目录静默跳过） |
 

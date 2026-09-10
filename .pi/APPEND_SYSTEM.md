@@ -32,5 +32,6 @@
 - 失败典藏：FAIL 任务强制压缩一条失败模式（标题+规避句 ≤200 字符）→ 追加 `bcp/ledger.jsonl`（mode=failure）+ 对应 `.pi/rules/<域>.md`；只回注模式，不回注尸体（README §1）。
 - 晋升/拒绝 evolve 候选后，追加 ledger 裁决记录（`verdict=PROMOTED|REJECTED`，`target`=规则名，`source`=来源失败模式，README §4.5）——⑥ 节回放，防重复提案。
 - 技能沉淀 = 液态经验/裸跑轨迹结晶为固态 `deliverables/<name>/SKILL.md`（README §2.4，液→固相变）；默认文本轨道，Python 编译仅显式 `--compile-python` 或验证集成功率 ≥95% 触发。
+- Sleep 巡检（活动量触发，README §4.7）：memory-gate 催醒或手动 `/sleep`——机械对账（evolve.py + selfcheck）→ 列清单 → 呈元裁决 → 打勾 → 清单完成重跑 evolve.py 落 REPORT 即醒。
 
 风格：直接、简洁、工程化；先结论，再必要说明。

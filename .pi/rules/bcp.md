@@ -8,6 +8,7 @@
 > 3. 真实账本破坏性测试——append-only 不可回滚 → 沙盒 + `--ledger` 空文件
 > 4. git porcelain 含空格文件名带引号——解析不剥 = 双向对碰两头错 → strip 引号
 > 5. 计划 accept 命令引号嵌套——JSON→shell 双层转义拆命令 → 只用简单词/grep -E
+> 6. 删除型任务与 R6 files 冲突——存在性断言与删除验收必矛盾 → 删除目标走 accept
 
 ## 模式 1：gate↔evolve 字段契约错位
 
