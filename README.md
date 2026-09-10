@@ -152,6 +152,12 @@
 | check.py | static / plan / plan+collision | findings[rule,sev,msg]（详见 §9.1） |
 | memory-gate | gate | 注入/召回事件：域注入 {domain, file}；技能召回 {kind:"skill-recall", target:<技能名>}；append 失败仅跳过，绝不阻断工具执行 |
 | evolve.py | evolve | 每次报告的审计痕迹（候选清单） |
+
+**容量与生命周期**（2026-09-12 审计定案）：
+
+- **append-only 永久保留**：账本=证据流，不滚动、不截断、不聚合——滚动=可篡改。`--window` 只是读取视图，存储全量。估算十年 <10MB，性能无虞。
+- **单条上界**：findings 落账截断 top50、msg≤200 字符，附 `findings_truncated: N`（全文在 stdout，账本只需索引）——单条体积 ~15KB 封顶。
+- **归档暂缓**：>5MB 再议 `git mv` 冷归档 + evolve 读 glob——无证据的工程=过早优化；时机由 selfcheck 账本健康项的数据说话。
 | 固化回流·失败典藏 | failure | 压缩失败模式 {title, avoidance, domain}（§1） |
 
 总装图：

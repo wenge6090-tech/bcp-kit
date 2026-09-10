@@ -482,6 +482,12 @@ def selfcheck() -> int:
     # 工作流逃逸代理（README §4.7）：commit 数 vs plan 记录数——粗代理非裁决，元看数据对账（/sleep）
     item(not (n_commit > 30 and n_plan * 5 < n_commit), "工作流逃逸代理", f"commits={n_commit} plan记录={n_plan}", "高 commit 低 plan 记录——疑有任务绕过计划流，跑 /sleep 对账清单核查")
 
+    # 账本健康（§4.3 生命周期）：体积可见——归档时机由数据说话（append-only 无界，归档协议暂缓）
+    if LEDGER.exists():
+        note("账本健康", f"{sum(1 for _ in LEDGER.open(encoding='utf-8'))} 条 / {LEDGER.stat().st_size / 1024:.0f}KB（append-only 无界；>5MB 再议冷归档 §4.3）")
+    else:
+        note("账本健康", "空（首条记录落账后创建）")
+
     # ── R1-R4 项目专属
     lines.append("[R1-R4 项目专属（未配置 = 设计内跳过，非空转）]")
     for key, name in (
@@ -541,7 +547,12 @@ def main() -> int:
         "verdict": verdict,
         "fail": n_fail,
         "warn": n_warn,
-        "findings": [{"rule": r, "sev": s, "msg": m} for r, s, m in findings],
+        # 单条体积上界（§4.3 生命周期）：findings 截断 top50、msg≤200 字符；全文在 stdout，账本只需索引
+        "findings": [
+            {"rule": r, "sev": s, "msg": m[:200]}
+            for r, s, m in findings[:50]
+        ],
+        "findings_truncated": max(0, len(findings) - 50),
     }
     LEDGER.parent.mkdir(exist_ok=True)
     with LEDGER.open("a", encoding="utf-8") as fh:
