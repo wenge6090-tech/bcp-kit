@@ -1,0 +1,400 @@
+#!/usr/bin/env python3
+"""BCP 机械检查器 v0 —— 零 LLM（范式背景见 BCP.md）。
+
+用法：
+  ./bcp/check.py                    # 静态规则集（R1-R5）
+  ./bcp/check.py --plan FILE        # + 计划引用解析与 accept 判据（R6）
+  ./bcp/check.py --plan FILE --collision   # + git diff 双向对碰（实现完成后）
+  ./bcp/check.py --no-exec          # R6 只解析不执行 accept
+
+失败路由（每条 finding 标注修复方向）：
+  R1-R4          → 改代码
+  R5             → 改文档
+  R6 引用/对碰类  → 改计划
+  R6 accept 失败  → 改代码
+  R7             → 改计划
+每次运行追加证据账本 bcp/ledger.jsonl。
+"""
+from __future__ import annotations
+
+import argparse
+import glob
+import json
+import re
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover
+    print("需要 Python 3.11+（tomllib）", file=sys.stderr)
+    sys.exit(2)
+
+ROOT = Path(__file__).resolve().parent.parent
+CFG = tomllib.loads((ROOT / "bcp" / "bcp.toml").read_text(encoding="utf-8"))
+LEDGER = ROOT / "bcp" / "ledger.jsonl"
+
+findings: list[tuple[str, str, str]] = []  # (rule, severity, message)
+
+
+def fail(rule: str, msg: str) -> None:
+    findings.append((rule, "FAIL", msg))
+
+
+def warn(rule: str, msg: str) -> None:
+    findings.append((rule, "WARN", msg))
+
+
+def read(path: Path) -> str:
+    return path.read_text(encoding="utf-8", errors="replace")
+
+
+def ident_boundary(name: str) -> str:
+    # ASCII 词边界（CJK 算非分隔符两侧之外的任意字符——「用read工具」也要命中）
+    return rf"(?<![A-Za-z0-9_]){re.escape(name)}(?![A-Za-z0-9_])"
+
+
+def _strip_rs_comments(text: str) -> str:
+    # 消费检测只认代码：注释里提及死字段（如教学性解释「恒空」）不算引用
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+    return re.sub(r"//[^\n]*", "", text)
+
+
+def _unquote(s: str) -> str:
+    """仅当首尾成对引号时剥掉——保护 `bash -c '...'` 这类尾引号命令。"""
+    s = s.strip()
+    if len(s) >= 2 and s[0] == s[-1] and s[0] in "\"'":
+        return s[1:-1]
+    return s
+
+
+# ---------------------------------------------------------------- R1 §20 六触点
+def r1_builtin_touchpoints() -> None:
+    rule = "R1-builtin-touchpoints(§20)"
+    cfg = CFG.get("rule", {}).get("builtin_touchpoints")
+    if not cfg:
+        return  # 未配置 = 未启用（R1–R4 为项目专属结构性规则，模板项目按需配置）
+    for name in cfg["builtins"]:
+        exec_file = ROOT / cfg["exec_dir"] / f"{name}.rs"
+        if not exec_file.exists():
+            fail(rule, f"①执行体缺失: {cfg['exec_dir']}/{name}.rs")
+        for reg in cfg["registries"]:
+            text = read(ROOT / reg)
+            if not re.search(ident_boundary(name), text):
+                fail(rule, f"触点未注册 {name!r} → {reg}")
+
+
+# ---------------------------------------------------------------- R2 §9 同步
+def _fn_string_literals(text: str, fn_name: str) -> set[str]:
+    m = re.search(rf"fn {re.escape(fn_name)}\b.*?^}}", text, re.S | re.M)
+    if not m:
+        return set()
+    return set(re.findall(r'"([A-Za-z0-9_-]+)"', m.group(0)))
+
+
+def r2_category_subset() -> None:
+    rule = "R2-category-subset(§9)"
+    cfg = CFG.get("rule", {}).get("category_subset")
+    if not cfg:
+        return  # 未配置 = 未启用
+    text = read(ROOT / cfg["file"])
+    kind_ids = _fn_string_literals(text, cfg["kind_fn"])
+    cat_ids = _fn_string_literals(text, cfg["category_fn"])
+    if not kind_ids:
+        fail(rule, f"未提取到 {cfg['kind_fn']}() 判据集（函数改名？同步 bcp.toml）")
+        return
+    if not cat_ids:
+        fail(rule, f"未提取到 {cfg['category_fn']}() 类别集（函数改名？同步 bcp.toml）")
+        return
+    for i in sorted(kind_ids - cat_ids):
+        fail(rule, f"判据 {i!r} 在 {cfg['kind_fn']} 而不在 {cfg['category_fn']}")
+
+
+# ---------------------------------------------------------------- R3 §13 死字段
+def r3_dead_fields() -> None:
+    rule = "R3-dead-fields(§13)"
+    cfg = CFG.get("rule", {}).get("dead_fields")
+    if not cfg:
+        return  # 未配置 = 未启用
+    allow = set(cfg["allow_files"])
+    for f in sorted((ROOT / "src").rglob("*.rs")):
+        rel = f.relative_to(ROOT).as_posix()
+        if rel in allow:
+            continue
+        text = _strip_rs_comments(read(f))
+        for field in cfg["fields"]:
+            if re.search(ident_boundary(field), text):
+                fail(rule, f"死字段 {field} 在白名单外被引用: {rel}")
+
+
+# ---------------------------------------------------------------- R4 §14 措辞域
+def r4_wording() -> None:
+    rule = "R4-wording-scope(§14)"
+    cfg = CFG.get("rule", {}).get("wording")
+    if not cfg:
+        return  # 未配置 = 未启用
+    for scope in cfg["scope"]:
+        p = ROOT / scope
+        files = [p] if p.is_file() else sorted(p.rglob("*.rs"))
+        for f in files:
+            text = read(f)
+            for phrase in cfg["banned"]:
+                if phrase in text:
+                    fail(rule, f"禁用措辞 {phrase!r} 于 {f.relative_to(ROOT).as_posix()}")
+
+
+# ---------------------------------------------------------------- R5 引用完整性
+def _resolve(tok: str, root_map: dict[str, str]) -> Path | None:
+    for prefix in sorted(root_map, key=len, reverse=True):
+        if tok.startswith(prefix):
+            return ROOT / root_map[prefix] / tok[len(prefix):]
+    return ROOT / tok
+
+
+_HEAD_CACHE: dict[str, set] = {}
+
+
+def _headings(doc: str) -> set:
+    """提取文档章节号（兼容 `## 5.2 标题` 与 `## 11. 标题` 两种风格）。"""
+    if doc not in _HEAD_CACHE:
+        p = ROOT / doc
+        _HEAD_CACHE[doc] = (
+            set(re.findall(r"^#{2,4}\s+(\d+(?:\.\d+)*)\.?\s", read(p), re.M))
+            if p.exists()
+            else set()
+        )
+    return _HEAD_CACHE[doc]
+
+
+def r5_doc_ghost_paths() -> None:
+    rule = "R5-doc-ghost-paths(引用完整性)"
+    cfg = CFG["rule"]["doc_ghost_paths"]
+    root_map = cfg.get("root_map", {})
+    ignores = cfg.get("ignore_prefixes", [])
+    src_files = None  # 惰性：仅遇到裸 .rs 名时全量列举一次
+    targets: list[str] = []
+    for doc in cfg["docs"]:
+        if any(ch in doc for ch in "*?["):
+            matched = sorted(glob.glob(str(ROOT / doc)))
+            if not matched:
+                warn(rule, f"glob 无匹配（跳过）: {doc}")
+            targets.extend(Path(m).resolve().relative_to(ROOT).as_posix() for m in matched)
+        else:
+            targets.append(doc)
+    for doc in targets:
+        path = ROOT / doc
+        if not path.exists():
+            warn(rule, f"待检文档不存在（跳过）: {doc}")
+            continue
+        for lineno, line in enumerate(read(path).splitlines(), 1):
+            deletion_context = any(m in line for m in ("已删", "删除", "移除", "deleted"))
+            for tok in set(re.findall(r"`([^`\n]+)`", line)):
+                tok = tok.strip()
+                if not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_./-]*\.[A-Za-z]{1,5}", tok):
+                    continue
+                if any(tok.startswith(p) for p in ignores):
+                    continue
+                if "/" in tok:
+                    cand = _resolve(tok, root_map)
+                    if cand is not None and not cand.exists():
+                        fail(rule, f"{doc}:{lineno} 断言路径不存在: {tok}")
+                elif tok.endswith(".rs"):
+                    if deletion_context:
+                        continue  # 「已删」行内提及的历史文件名不作存在性断言
+                    if src_files is None:
+                        src_files = {f.name: f for f in (ROOT / "src").rglob("*.rs")}
+                    if tok not in src_files:
+                        fail(rule, f"{doc}:{lineno} 断言源文件不存在: {tok}")
+
+
+# ---------------------------------------------------------------- R7 §3.1 探索纯净
+def r7_explore_purity(plan: dict) -> None:
+    rule = "R7-explore-purity(§3.1)"
+    cfg = CFG.get("rule", {}).get("explore_purity")
+    if not cfg:
+        return
+    mode = str(plan.get("mode", "infer")).strip()
+    if mode not in ("explore", "infer"):
+        fail(rule, f"mode 非法 {mode!r}（只允许 explore | infer，缺省 infer → 改计划）")
+    items = plan.get("items") or []
+    raw_track = any(
+        str(f).endswith(m)
+        for m in cfg["raw_track_markers"]
+        for it in items
+        for f in it.get("files", [])
+    ) or str(plan.get("skill_evolution", "")).strip().lower() == "true"
+    if raw_track and mode != "explore":
+        fail(rule, "产出原始轨迹（SKILL.md）/ skill_evolution 任务必须 mode: explore（元裸跑，禁先验注入 → 改计划）")
+
+
+# ---------------------------------------------------------------- R6 计划对碰
+def _parse_plan_header(text: str) -> dict | None:
+    m = re.search(r"^```yaml\s*\n(.*?)^```\s*$", text, re.S | re.M) or re.search(
+        r"^---\s*\n(.*?)^---\s*$", text, re.S | re.M
+    )
+    if not m:
+        return None
+    plan: dict = {}
+    item: dict | None = None
+    block_list: list[str] | None = None  # 当前打开的多行列表（files/interfaces/accept）
+    block_indent = -1  # 打开列表的键缩进；后续行缩进 ≤ 它 = 列表结束
+    for raw in m.group(1).splitlines():
+        if not raw.strip() or raw.strip().startswith("#"):
+            continue
+        indent = len(raw) - len(raw.lstrip(" "))
+        line = raw.strip()
+        if indent == 0:
+            item = None
+            block_list = None
+            k, _, v = line.partition(":")
+            if k.strip() == "items" and not v.strip():
+                plan["items"] = []
+            else:
+                plan[k.strip()] = v.split(" #")[0].strip().strip('"')
+            continue
+        if plan.get("items") is None:
+            continue
+        if block_list is not None and indent <= block_indent:
+            block_list = None
+        if line.startswith("- "):
+            if block_list is not None:  # 列表条目，不是新 item
+                entry = _unquote(line[2:])
+                if entry:
+                    block_list.append(entry)
+                continue
+            item = {}
+            plan["items"].append(item)
+            line = line[2:].strip()
+        if item is None:
+            continue
+        k, _, v = line.partition(":")
+        k, v = k.strip(), v.split(" #")[0].strip()
+        if v == "":
+            item[k] = []
+            block_list = item[k]
+            block_indent = indent
+        elif v.startswith("["):
+            item[k] = [_unquote(x) for x in v.strip("[]").split(",") if x.strip()]
+            block_list = None
+        else:
+            item[k] = _unquote(v)
+            block_list = None
+    return plan or None
+
+
+# accept 执行统一用 bash -c（≠ /bin/sh/dash：||、for、[[ ]] 等 bash 语义不走样）
+# shell 语法错误特征（引号不配对/EOF）→ 命令自身坏了，路由「改计划」而非「改代码」（假阳性治理）
+_SYNTAX_ERR = re.compile(r"(unexpected EOF|未预期的 EOF|syntax error|语法错误)", re.I)
+
+
+def r6_plan(plan_path: Path, *, run_accept: bool, collision: bool) -> None:
+    rule = "R6-plan-collision"
+    plan = _parse_plan_header(read(plan_path))
+    if plan is None:
+        fail(rule, "未找到计划 YAML 头（```yaml 围栏或 --- 块）——P 必须结构化（plan.md 协议）")
+        return
+    r7_explore_purity(plan)
+    items = plan.get("items") or []
+    if not items:
+        fail(rule, "items 为空——计划无转化条目")
+    for it in items:
+        pid = it.get("id", "?")
+        raw = str(it.get("blueprint", "")).strip()
+        if not raw:
+            warn(rule, f"{pid}: 未声明 blueprint 锚（建议引用章节号）")
+            continue
+        # 锚格式：`§x.y`（默认 Blueprint.md）或 `文件§x.y`（如 BCP.md§11.2）
+        doc, _, sec = raw.partition("§")
+        doc = doc.strip() or "Blueprint.md"
+        sec = sec.strip()
+        if not (ROOT / doc).exists():
+            fail(rule, f"{pid}: blueprint 引用文档不存在 {doc}（→ 回写蓝图或改计划）")
+        elif sec not in _headings(doc):
+            fail(rule, f"{pid}: blueprint 引用悬空 {raw}（{doc} 无此章节 → 回写蓝图或改计划）")
+        for f in it.get("files", []):
+            if not (ROOT / f).exists():
+                fail(rule, f"{pid}: 声明文件不存在 {f}（→ 改计划）")
+        for iface in it.get("interfaces", []):
+            code_files = list((ROOT / "src").rglob("*.rs")) + list((ROOT / "bcp").rglob("*.py"))
+            if not any(iface in read(f) for f in code_files):
+                fail(rule, f"{pid}: 接口签名未命中 {iface!r}（→ 改计划）")
+        for cmd in it.get("accept", []):
+            if not run_accept:
+                continue
+            try:
+                r = subprocess.run(["bash", "-c", cmd], cwd=ROOT, capture_output=True, text=True, timeout=600)
+            except subprocess.TimeoutExpired:
+                fail(rule, f"{pid}: accept 超时(600s)（→ 改代码）: {cmd}")
+                continue
+            if r.returncode != 0:
+                tail = (r.stderr or r.stdout).strip().splitlines()[-1:]
+                detail = f" —— {tail[0][:120]}" if tail else ""
+                if _SYNTAX_ERR.search(r.stderr or ""):
+                    fail(rule, f"{pid}: accept 命令 shell 语法错误，未真正执行（→ 改计划：简化引号嵌套或改为脚本文件）: {cmd}{detail}")
+                else:
+                    fail(rule, f"{pid}: accept 失败（→ 改代码）: {cmd}{detail}")
+    if collision:
+        excludes = tuple(CFG.get("rule", {}).get("plan_collision", {}).get("excludes", []))
+        out = subprocess.run(
+            ["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True
+        ).stdout.splitlines()
+        raw_changed = {ln[3:].strip() for ln in out if len(ln) > 3}
+        # 豁免语义：excludes 路径不强制声明；但声明了就必须真改动。
+        changed = {c for c in raw_changed if not c.startswith(excludes)}
+        declared = {f for it in items for f in it.get("files", [])}
+        for f in sorted(declared - raw_changed):
+            fail(rule, f"声明未改动 {f}（声明了没改 → 改实现或修正 files）")
+        for f in sorted(changed - declared):
+            fail(rule, f"改动未声明 {f}（改了没声明 → 更新 files 或回退改动）")
+
+
+# ---------------------------------------------------------------- main
+def main() -> int:
+    ap = argparse.ArgumentParser(description="BCP 对碰器 v0（阴·机械对碰）")
+    ap.add_argument("--plan", type=Path, help="计划文件路径（启用 R6）")
+    ap.add_argument("--collision", action="store_true", help="启用 git diff 双向对碰（需 --plan）")
+    ap.add_argument("--no-exec", action="store_true", help="R6 不执行 accept 命令")
+    args = ap.parse_args()
+
+    r1_builtin_touchpoints()
+    r2_category_subset()
+    r3_dead_fields()
+    r4_wording()
+    r5_doc_ghost_paths()
+    if args.plan:
+        r6_plan(args.plan, run_accept=not args.no_exec, collision=args.collision)
+
+    seam = {
+        "R1-builtin-touchpoints(§20)": "改代码",
+        "R2-category-subset(§9)": "改代码",
+        "R3-dead-fields(§13)": "改代码",
+        "R4-wording-scope(§14)": "改代码",
+        "R5-doc-ghost-paths(引用完整性)": "改文档",
+        "R6-plan-collision": "见各条",
+        "R7-explore-purity(§3.1)": "改计划",
+    }
+    for r, s, m in findings:
+        print(f"[{s}] {r} [{seam.get(r, '')}]\n    {m}")
+    n_fail = sum(1 for _, s, _ in findings if s == "FAIL")
+    n_warn = sum(1 for _, s, _ in findings if s == "WARN")
+    verdict = "PASS" if n_fail == 0 else "FAIL"
+    print(f"\n对碰裁决: {verdict}  (FAIL={n_fail} WARN={n_warn})")
+
+    rec = {
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "mode": "plan+collision" if args.plan and args.collision else ("plan" if args.plan else "static"),
+        "verdict": verdict,
+        "fail": n_fail,
+        "warn": n_warn,
+        "findings": [{"rule": r, "sev": s, "msg": m} for r, s, m in findings],
+    }
+    LEDGER.parent.mkdir(exist_ok=True)
+    with LEDGER.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    return 0 if n_fail == 0 else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

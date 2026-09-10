@@ -1,0 +1,4 @@
+#!/bin/sh
+# BCP 提交闸门：机械 check FAIL 拒绝提交。
+# 绕过 = git commit --no-verify（人可见越轨）。
+python3 bcp/check.py
