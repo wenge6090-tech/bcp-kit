@@ -162,3 +162,6 @@
 {"ts": "2026-09-11T19:14:29", "mode": "verify", "state": "pending", "commits": 25, "id": "20260911-evolve-smoke", "claim": "给 bcp/evolve.py 补报告器冒烟测试面：kit/evolve-smoke.test.py 用 --ledger 沙盒跑四形态账本（空/仅 pending/畸形+幽灵+重复/正常低确认率），断言退出码 0 + REPORT 落账 + 真账本尺寸与 mtime 不变；探针回放验证（修复前版本红 2 项）", "items": ["P1 蓝图 §5.5 报告器测试面 + §8.2 kit 描述", "P2 冒烟脚本 + 规则域模式 8 扩展 + AGENTS 索引"], "files": ["kit/evolve-smoke.test.py", "Blueprint.md", ".pi/rules/bcp.md", "AGENTS.md"], "accept": "python3 kit/evolve-smoke.test.py → 5 项红 0；/check --plan evolve-smoke --collision PASS；回放：修复前版本红 2（退出码 1/Traceback/REPORT 未落账）", "anchors": ["§5.5", "§8.2"]}
 {"ts": "2026-09-11T19:14:29", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
 {"ts": "2026-09-11T19:15:36", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T19:51:42", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T19:51:57", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T19:51:57", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
