@@ -7,7 +7,7 @@
 
 [rule.doc_ghost_paths]
 # R5 引用完整性：文档反引号内断言的仓库路径必须存在（防幽灵基建）
-docs = ["AGENTS.md", "README.md", ".pi/APPEND_SYSTEM.md", ".pi/rules/*.md", "Blueprint.md"]
+docs = ["AGENTS.md", "README.md", "README.zh-CN.md", ".pi/APPEND_SYSTEM.md", ".pi/rules/*.md", "Blueprint.md"]
 # 运行时数据 / 仓库外产物路径，不作仓库存在性断言（按项目增补）
 # bcp/ledger.jsonl = 范式自产运行时文件：首跑 check 前不存在属常态（新项目从零建 bcp/ 勿断言）
 ignore_prefixes = ["target/", "node_modules/", "deliverables/", "tasks/", "prompts/", "verifications/", "bcp/ledger.jsonl"]
@@ -20,7 +20,7 @@ raw_track_markers = ["SKILL.md"]
 
 [rule.plan_collision]
 # --collision 模式下豁免对碰的路径（范式文档自身随任务变更属正常）
-excludes = ["bcp/", ".pi/", "plan.md", "README.md", "AGENTS.md", "Blueprint.md", "bcp/ledger.jsonl"]
+excludes = ["bcp/", ".pi/", "plan.md", "README.md", "README.zh-CN.md", "AGENTS.md", "Blueprint.md", "bcp/ledger.jsonl"]
 
 [rule.demote]
 # §5.4 降级豁免：结构性规则（违反即大改，命中天然低频）不参与命中数降级（R1–R4 项目专属 + R8 技能结构闸）

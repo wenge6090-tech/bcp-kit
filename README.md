@@ -1,213 +1,216 @@
-# BCP — Blueprint Completion Protocol（蓝图完形协议）
+# BCP — Blueprint Completion Protocol
 
-> **一个让领域专家安全使用 AI 构建复杂系统的开发范式。**
+> **A development paradigm that lets domain experts build complex systems with AI, safely.**
 
-BCP 的三个字母来自 **Blueprint Completion**：**蓝图**是元批准的设计（B 相位），**完形**（completion）是阳把不完整的上下文补成完整产出；**协议**（protocol）是三方各自做什么、不做什么、谁说了算的那套规定。
+[中文版](README.zh-CN.md) | **English**
 
-BCP 不是工具，不是框架，不是产品。它是一套**协作宪法**——规定人类、AI、符号系统三方在开发中各自做什么、不做什么、谁说了算。
+BCP is not a tool, not a framework, not a product. It is a **coordination constitution** — it fixes what the human, the AI, and the symbolic system each do, what they must not do, and who has the final say.
 
-它的核心只有一句话：
+Its core is one sentence:
 
-**你定方向，AI 执行，有一个不是 AI 的东西替你检查 AI 有没有撒谎。**
+**You set the direction, the AI executes, and something that is not an AI checks whether the AI lied.**
 
-> 📐 范式全貌与机械契约（三方裁决权、R1–R8 规则表、账本 schema、演化算子、适用边界、全部设计论证）→ **[Blueprint.md](Blueprint.md)**
+The three letters come from **Blueprint Completion**: the *blueprint* is the meta-approved design (phase B), *completion* is Yang filling an incomplete context into a complete artifact, and the *protocol* is the set of rules about who decides what.
 
-## 为什么需要 BCP
+> 📐 Full paradigm and mechanical contracts (three-party authority, R1–R8 rule table, ledger schema, evolution operators, applicability boundary, all design rationale) → **[Blueprint.md](Blueprint.md)**
 
-AI 已经能写代码、做分析、生成方案。但当你**无法逐行审查 AI 的产出**时，你面对三个问题：
+## Why BCP
 
-1. **AI 偷偷做了你没让它做的事**——你让它做数据清洗，它"顺手"加了一个去重，而你的领域知识告诉你那个去重是错的。
-2. **AI 说它检查过了，但你不信**——AI 检查 AI 就是概率系统验证概率系统，同一个盲区、同一个偏好、同一个幻觉。
-3. **跨会话经验无法累积**——上周踩过的坑，这周重新踩一遍。AI 不记得，你也不记得。
+AI can already write code, run analysis, and generate plans. But once you **cannot review the AI's output line by line**, you face three problems:
 
-BCP 用三个机制回应：
+1. **The AI silently did something you never asked for.** You asked for data cleaning; it "helpfully" added a deduplication step — and your domain knowledge tells you that dedup is wrong.
+2. **The AI says it checked, and you don't believe it.** AI checking AI is a probabilistic system verifying a probabilistic system: the same blind spots, the same biases, the same hallucinations.
+3. **Experience does not accumulate across sessions.** The pitfall you hit last week is hit again this week. The AI doesn't remember, and neither do you.
 
-- **声明对碰**：AI 必须声明它做了什么，符号系统机械验证声明与事实是否一致。
-- **零 LLM 裁决**：检查 AI 的东西，本身不能是 AI。必须是编译器、测试链、机械判据——同输入永远同输出。
-- **失败典藏 + 滞后验证**：失败压缩为规避句，元反馈滞后录入，系统越用越准。
+BCP answers with three mechanisms:
 
-## 三方模型
+- **Declared collision** — the AI must declare what it did; the symbolic system mechanically checks the declaration against the facts.
+- **Zero-LLM adjudication** — whatever checks the AI must itself not be an AI: a compiler, a test chain, a mechanical predicate. Same input, same output, always.
+- **Failure archive + delayed verification** — failures are compressed into avoidance sentences, the meta's feedback is recorded late, and the system gets sharper with use.
 
-BCP 里只有三个角色：
+## The three parties
 
-| 角色 | 是谁 | 干什么 | 性质 |
-|------|------|--------|------|
-| **元** | 人（领域专家） | 提意图、批准设计、裁决演化、反馈现实效果 | 唯一能对「好不好」负责的一方 |
-| **阳** | LLM | 在给定上下文里完形：起草计划、写代码、写文档 | 概率性：上下文越完整，输出越收敛 |
-| **阴** | 符号系统 | 编译、测试、机械对碰、账本记录 | 确定性：同输入永远同输出，无立场 |
+BCP has exactly three roles:
 
-**三条铁律：**
+| Role | Who | Does | Nature |
+|---|---|---|---|
+| **Meta** (元) | Human (domain expert) | States intent, approves designs, adjudicates evolution, feeds back real-world outcomes | The only party accountable for "is it good?" |
+| **Yang** (阳) | LLM | Completes (完形): drafts plans, writes code, writes docs, given context | Probabilistic: the more complete the context, the more convergent the output |
+| **Yin** (阴) | Symbolic system | Compiles, tests, collides mechanically, records the ledger | Deterministic: same input, same output, no position |
 
-1. **元永远拥有最终验证权。** 阴的 PASS 是入场券，不是完成态。产出在现实中是否真的有用，只能由元在滞后反馈中判断。
-2. **阴永远是零 LLM。** 概率系统不能验证概率系统。检查 AI 的东西，必须是确定性的符号程序。
-3. **阳不能自查自证。** 所有让 AI 检查 AI 的安排，都是作弊。
+Three iron rules:
 
-## 工作流
+1. **The meta always holds final verification.** Yin's PASS is a ticket to entry, not a completion state. Whether the output is actually useful in reality can only be judged by the meta, later.
+2. **Yin is always zero-LLM.** A probabilistic system cannot verify a probabilistic system.
+3. **Yang cannot self-certify.** Any arrangement in which AI checks AI is cheating.
 
-一句话链：`意图(NL) →(元裁决)→ B 设计 →(组装)→ P 计划 →(阳完形)→ C 代码 →(阴对碰)→ 固化回流`。
+## The workflow
 
-四个工件沿链相变：**B 设计**（固，元批准）→ **P 计划**（气态内容物，agent 消费）→ **C 代码**（固，唯一实现事实）→ **A 规则**（液，回流沉淀）。经验规则反复被召回、验证后，经门控结晶为 **S 技能**（固）。
+One-line chain: `intent →(meta)→ B design →(assembly)→ P plan →(Yang completes)→ C code →(Yin collides)→ consolidation`.
 
-> **完整工作流总图**（含全节点：失败典藏、滞后验证轴、sleep 节律、固化回流与晋升/降级）→ **Blueprint §1.2**（单一来源，避免双写漂移）。
+Four artifacts change phase along the chain: **B design** (solid, meta-approved) → **P plan** (gas, transient, consumed by the agent) → **C code** (solid, the only implementation fact) → **A rules** (liquid, settled back). Rules that are repeatedly recalled and validated may crystallize through a gate into **S skills** (solid).
 
-## 五个关键机制
+> **Full workflow graph** (all nodes: failure archive, delayed-verification axis, sleep rhythm, consolidation and promotion/demotion) → **Blueprint §1.2** (single source; avoids drift from duplication).
 
-### 1. check：机械对碰
+## Five key mechanisms
 
-`bcp/check.py` 是阴的核心工具。它不检查"代码写得好不好"，只检查**工件之间的接缝对不对得上**：
+### 1. check — mechanical collision
 
-- 计划引用的设计章节，真的存在吗？（R6 锚解析）
-- 计划声明改的文件，git diff 里恰好是这些吗？（R6 双向对碰）
-- 计划声明的验收命令，真的能跑通吗？（R6 accept 执行）
-- 文档里写的路径，真的存在吗？（R5 幽灵路径）
-- 技能产出的结构，符合契约吗？（R8 技能结构）
+`bcp/check.py` is Yin's core tool. It does not judge "is the code good"; it checks whether the **seams between artifacts** line up:
 
-每次运行追加账本。PASS 是入场券，FAIL 带修复方向。
+- Does the design section cited by the plan actually exist? (R6 anchor resolution)
+- Are the files the plan declares exactly the files in `git diff`? (R6 two-way collision)
+- Do the plan's acceptance commands actually run green? (R6 accept execution)
+- Do the paths written in documents actually exist? (R5 ghost paths)
+- Does the produced skill match the structure contract? (R8 skill structure)
 
-### 2. 账本：证据流
+Every run appends to the ledger. PASS is a ticket to entry; FAIL comes with a repair direction.
 
-`bcp/ledger.jsonl` 是 append-only 的证据流。每次 check 对碰、每次规则注入、每次失败典藏，都追加一条记录。
+### 2. ledger — the evidence stream
 
-账本回答两个问题：
+`bcp/ledger.jsonl` is an append-only evidence stream. Every collision, every rule injection, every failure archive appends a record.
 
-- **历史上发生了什么**——哪些规则高频违反？哪些技能从未被召回？哪些域从未被注入？
-- **接下来该做什么**——`evolve.py` 读账本产出候选，sleep 读账本列清单，memory-gate 读账本决定注入。
+The ledger answers two questions:
 
-账本永远不做裁决。它只提供数据，裁决权在元。
+- **What happened historically** — which rules are violated often? Which skills were never recalled? Which domains were never injected?
+- **What to do next** — `bcp/evolve.py` reads the ledger to produce candidates, sleep reads it to build the checklist, memory-gate reads it to decide injections.
 
-### 3. 规则：经验载体
+The ledger never adjudicates. It supplies data; adjudication stays with the meta.
 
-规则由 Agent 在任务终态按回流协议写入 `.pi/rules/<域>.md`：
+### 3. rules — the carriers of experience
 
-- **避坑候选**（≤3 条）：任务收尾时写入。
-- **失败模式**（FAIL 必产一条）：压缩为标题 + 规避句（≤200 字符），入账本 + 规则文件。
-- **规则页**：问题 + 根因 + 证据 + 规避句（10–30 行），文件头一行式目录。
+Rules are written by the agent at task closeout, following the backflow protocol, into `.pi/rules/<domain>.md`:
 
-规则汇入 A 内核**无垒**——液体自校正，错规则会被演化算子冲掉。律令化（凝结进 check）同样**无需元批准**——判据可机械验证，证据即凭证。需要元批准的是**设计入 B** 与**技能结晶**（能垒，见下节）。
+- **Pitfall candidates** (≤3): written at task closeout.
+- **Failure patterns** (one mandatory per FAIL): compressed to a title + avoidance sentence (≤200 chars), into the ledger and the rule file.
+- **Rule page**: problem + root cause + evidence + avoidance sentence (10–30 lines), with a one-line table of contents at the top.
 
-### 4. skill：结晶产物
+Rules flow into the A kernel **without a gate** — liquid self-corrects, bad rules get washed out by the evolution operators. Codifying a rule into `check` (making it a mechanical predicate) also needs **no meta approval** — the predicate is mechanically verifiable, so the evidence is the warrant. What *does* need meta approval (the gate) is **admitting a design into B** and **crystallizing a skill**.
 
-skill 由**规则提供内容，账本提供证据**，两者共同决定是否结晶：
+### 4. skill — the crystallization product
 
-- 规则/裸跑轨迹提供可复用的程序性知识。
-- 账本提供召回计数、验证记录、失败模式。
-- evolve ⑦ 节做双向对碰：有目录无记录 = 绕能垒结晶；有记录无目录 = 幽灵注册。
-- **元批准后**，Agent 产出 `deliverables/<name>/SKILL.md`，R8 结构闸检查。
+A skill is decided jointly by **rules supplying content and the ledger supplying evidence**:
 
-默认产物是**文本技能**（Markdown + frontmatter）。编译为 Python 是可选优化（当前未落地，Blueprint §8.2 未落地候选）。
+- Rules / raw trajectories supply reusable procedural knowledge.
+- The ledger supplies recall counts, validation records, failure patterns.
+- evolve section ⑦ collides both ways: a directory with no record = crystallization bypassing the gate; a record with no directory = ghost registration.
+- **After meta approval**, the agent produces `deliverables/<name>/SKILL.md`, checked by the R8 structure gate.
 
-### 5. sleep：代谢节律
+The default artifact is a **text skill** (Markdown + frontmatter). Compiling to Python is an optional optimization (not implemented yet — see Blueprint §8.2, unwired candidates).
 
-`sleep` 把巡检从「靠自觉」变成「按活动量自动触发」：
+### 5. sleep — the metabolic rhythm
 
-- **触发**：commit 数 − 上次 REPORT 基准 > 30。
-- **执行**：机械对账（evolve + selfcheck）→ 列清单落盘 → 元逐条裁决 → 打勾 → 删单 → REPORT 落账。
-- **醒来** = 新的 evolve REPORT 记录落账，判据自动归零。
+`sleep` turns inspection from "remember to do it" into "triggered by activity":
 
-sleep 呈报，不强制。元可以跳过任何一条，pending 不阻塞任何东西。
+- **Trigger**: commits − last REPORT baseline > 30.
+- **Execution**: mechanical reconciliation (evolve + selfcheck) → write a checklist → meta rules on each item → tick → delete the list → REPORT recorded.
+- **Waking up** = a new evolve REPORT lands in the ledger; the predicate resets to zero.
 
-## 元反馈协议：滞后验证
+sleep reports, it does not force. The meta may skip any item; pending blocks nothing.
 
-这是 BCP 最关键的机制，也是最新落地的部分。
+## Delayed verification: the meta feedback protocol
 
-**问题**：阴的 PASS 只说明「声明与机械事实一致」，不说明「这个东西在现实中真的有用」。免疫学家知道门控策略对不对，但他读不懂代码。这个判断只能由元在现实使用后做出，而且必然滞后。
+This is BCP's most important mechanism, and the most recently landed one.
 
-**协议**：
+**The problem**: Yin's PASS only means "the declaration matches the mechanical facts". It does not mean "this thing is actually useful in reality". An immunologist knows whether a gating strategy is right, but cannot read the code. That judgment can only be made by the meta, after real use — and it is inevitably late.
 
-| 阶段 | 谁 | 做什么 |
-|------|----|--------|
-| 任务收尾 | 阴 | 机械对碰 → PASS 即落 `claim`（快照产出/文件/验收锚 + commits 基准） |
-| 滞后熟成 | 阴 | 按**活动量分桶**呈报：<10 新鲜（可跳过）/ 10–30 应验证 / >30 可判长期（`commits` 距离，非墙钟） |
-| 元反馈 | 元 | 书记员预填草稿 → 元说大白话 → 阳转写为结构化 `judged` |
-| 归因 | 元 | defect/drift 必带归因层：design / plan / implementation / environment / requirement |
-| 任意时点 | 元 | 报障即闭 / `/feedback` 主动闭；跳过 = 保持 pending |
+**The protocol**:
 
-**核心设计**：
+| Stage | Who | What |
+|---|---|---|
+| Task closeout | Yin | mechanical collision → on PASS, record a `claim` (snapshot of deliverables / files / acceptance anchors + commits baseline) |
+| Aging | Yin | reported by **activity buckets**: <10 commits fresh (skippable) / 10–30 due for verification / >30 decidable long-term (distance in `commits`, not wall-clock) |
+| Feedback | Meta | the clerk pre-fills a draft → the meta speaks plainly → Yang transcribes into a structured `judged` record |
+| Attribution | Meta | defect/drift must carry an attribution layer: design / plan / implementation / environment / requirement |
+| Any time | Meta | report a breakage and close it on the spot / close it proactively via `/feedback`; skipping = it stays pending |
 
-- **书记员预填草稿**：Agent 从 claim 记录生成预填稿，元只说大白话，阳翻译成结构化反馈。
-- **归因层**：环境不罚 AI——元说「数据格式变了」，这不是 AI 的错，只更新前提。
-- **pending 不阻塞**：claim 只是账本上的待办标记。元可以随时闭账，也可以永远不闭。pending 积压本身是信号。
-- **账本 append-only**：草稿只活在对话里，账本只落元确认后的记录。入账即已确认。
+**Core design**:
 
-> 为什么用活动量而不是时间：BCP 无守护进程，定时器 = 为元反馈造 cron；元的真实节奏是「做了足够多的事之后回头看看」。完整论证见 Blueprint §6。
+- **The clerk pre-fills, never fills in.** The agent drafts from the claim record; the meta speaks plain language; Yang translates it into a structured record.
+- **Attribution layer**: the environment does not penalize the AI — "the data format changed" is not the AI's fault, it only updates the premises.
+- **pending never blocks**: a claim is just a to-do marker in the ledger. The meta may close it any time, or never. A backlog of pending items is itself a signal.
+- **The ledger stays append-only**: drafts live only in the conversation; only meta-confirmed records land. Recorded means confirmed.
 
-## 元技能沉淀：越用越轻松
+> Why activity instead of time: BCP has no daemon, and a timer would be building a cron for meta feedback; the meta's real rhythm is "after doing enough work, look back". Full rationale in Blueprint §6.
 
-BCP 的准入门槛确实高。第一天，元需要懂 BCP 架构、懂工件相变、懂 agent 系统。这是「领域专家 + agent 架构师」双重身份。
+## Meta skills: lighter with use
 
-**但这是第一天，不是终态。**
+BCP's entry bar is genuinely high. On day one the meta needs to understand the BCP architecture, artifact phase changes, and agent systems — a double identity of "domain expert + agent architect".
 
-元在长期使用中，会反复做出同类判断：归因模式、阈值判断、风险偏好、验收标准、禁忌模式。这些判断模式可以被沉淀为**元技能**——关于「如何操作 BCP」的程序性知识。
+**But that is day one, not the end state.**
 
-| 阶段 | 元的工作 | 认知负荷 |
-|------|---------|---------|
-| 冷启动 | 每条反馈从零判断 | 最高 |
-| 模式积累 | 系统提取模式，预填草稿 | 下降 |
-| 元技能结晶 | 高频模式注入反馈访谈 | 稳定在「领域判断 + 确认」 |
-| 长期 | 元只处理未知模式 | 持续降低，但永不归零 |
+Over long use, the meta repeatedly makes the same kind of judgments: attribution patterns, threshold calls, risk appetite, acceptance criteria, taboos. Those judgment patterns can be crystallized into **meta skills** — procedural knowledge about *how to operate BCP*.
 
-**阶段是描述不是机制**——不建阶段守护进程，何时结晶由确认数据驱动；冷启动期零元技能是常态，没有确认数据就不结晶（Blueprint §3）。
+| Stage | The meta's work | Cognitive load |
+|---|---|---|
+| Cold start | Judge every piece of feedback from scratch | Highest |
+| Pattern accumulation | The system extracts patterns, pre-fills drafts | Falling |
+| Meta-skill crystallization | High-frequency patterns are injected into feedback interviews | Stable at "domain judgment + confirmation" |
+| Long term | The meta only handles unknown patterns | Keeps falling, never reaches zero |
 
-**元技能只预填，不代填。** 元永远保留最终判断权。元技能是「草稿生成器」，不是「决策替代器」。
+**Stages are a description, not a mechanism** — no stage daemon is built; when crystallization happens is driven by confirmation data. Zero meta skills during cold start is the norm: no confirmation data, no crystallization (Blueprint §3).
 
-## 适用边界
+**Meta skills only pre-fill, never fill in.** The meta always keeps the final judgment. A meta skill is a draft generator, not a decision substitute.
 
-BCP 的三相循环为「人不在场 + 无现成裁判」的开放域设计：
+## Where BCP fits
 
-| 适用 | 不适用 |
-|------|--------|
-| 需求模糊、无现成测试、AI 需独立完成多轮迭代的域 | 有完整 CI/CD + 测试覆盖的成熟代码库 |
-| 人只给设计、无法逐行 review 的场景 | 人可实时结对 / 逐行 review 的场景 |
-| 需要跨会话、跨模型、跨人员的经验累积 | 一次性脚本、探索性原型 |
+BCP's three-phase loop is designed for open domains — "no human present + no ready-made judge":
 
-**装错域 = 给自带裁判器的域上重机制，白付对碰税。**
+| Fits | Does not fit |
+|---|---|
+| Fuzzy requirements, no existing tests, the AI must iterate independently over many rounds | A mature codebase with full CI/CD and test coverage |
+| The human gives the design only and cannot review line by line | Scenarios where a human can pair / review line by line |
+| Experience must accumulate across sessions, models, and people | One-off scripts, exploratory prototypes |
 
-## 它能成为什么
+**Installing it in the wrong domain = paying the collision tax for a domain that already has its own judge.**
 
-BCP 是一个**范式**，不是一个产品。
+## What it can become
 
-- 写代码能用它（当前形态）。
-- 专家问答能用它（把「回答」当成产出物，把「硬规则」当成阴）。
-- 工业布局能用它（把「布局方案」当成产出物，把「干涉判据」当成阴）。
-- 任何需要**领域判断 + AI 生成 + 机械验证 + 跨时间累积**的场景，都能用它。
+BCP is a **paradigm**, not a product.
 
-**产品会过时。范式不会。**
+- Writing code can use it (today's form).
+- Expert Q&A can use it (treat the "answer" as the deliverable, the "hard rules" as Yin).
+- Industrial layout can use it (treat the "layout plan" as the deliverable, the "interference criteria" as Yin).
+- Any setting that needs **domain judgment + AI generation + mechanical verification + accumulation over time** can use it.
 
-## 快速开始
+**Products go stale. Paradigms don't.**
+
+## Quick start
 
 ```bash
-# 1. 复制宿主无关件到项目根（Blueprint.md 是范式 spec，必须随包复制）
-cp -r README.md Blueprint.md plan.md bcp .pi <项目根>/
+# 1. Copy the host-independent files into your project root
+#    (Blueprint.md is the paradigm spec and must be copied along)
+cp -r README.md README.zh-CN.md Blueprint.md plan.md bcp .pi <your-project>/
 
-# 2. 填实例层
-#    - AGENTS.md：按 kit/AGENTS.template.md 骨架填项目索引（≤6KB）
-#    - bcp/bcp.toml：按需启用 R1–R4 项目专属规则（缺省跳过）
-#    - .pi/extensions/memory-gate.ts：填 ROUTES 路径→域映射（空表 = 域注入空转）
+# 2. Fill in the instance layer
+#    - AGENTS.md: project index, modeled on the kit/AGENTS.template.md skeleton (≤6KB)
+#    - bcp/bcp.toml: enable the project-specific rules R1–R4 as needed (unconfigured = skipped)
+#    - .pi/extensions/memory-gate.ts: fill ROUTES (path → domain); an empty table means domain injection idles
 
-# 3. 装提交闸门（hook 从本仓库 kit/ 取，kit/ 本身不进项目）
-cp <bcp-kit>/kit/pre-commit <项目根>/.git/hooks/pre-commit && chmod +x <项目根>/.git/hooks/pre-commit
+# 3. Install the commit gate (the hook comes from this repo's kit/; kit/ itself is not copied)
+cp <bcp-kit>/kit/pre-commit <your-project>/.git/hooks/pre-commit && chmod +x <your-project>/.git/hooks/pre-commit
 
-# 4. 范式健康自检（IDLE = 闸门空转，形同虚设）
+# 4. Paradigm health self-check (IDLE = a gate is idling, i.e. effectively absent)
 python3 bcp/check.py --selfcheck
 
-# 5. 重启宿主会话，再跑一次 --selfcheck 确认
+# 5. Restart the host session, then run --selfcheck once more to confirm
 ```
 
-## 许可证与贡献
+## License and contributing
 
-- **许可证**：暂未声明（当前为私有仓库；如需开源请先补 LICENSE）。
-- **贡献**：走 BCP 工作流——/bcp 设计落 Blueprint 章节（两图 + 编号，需元批准）→ /plan 计划锚引用 → 实现 → `/check` 机械对碰全绿。详见 [Blueprint.md](Blueprint.md) 变更工作流。
+- **License**: not declared yet (currently a private repository; add a LICENSE before open-sourcing).
+- **Contributing**: follow the BCP workflow — /bcp design lands a Blueprint section (two diagrams + section number, meta approval required) → /plan with anchored references → implementation → `/check` collision green. See the change workflow in [Blueprint.md](Blueprint.md).
 
-## 一句话
+## In one sentence
 
-**BCP 给你的，是一个「你不需要读代码就能控制 AI 开发」的治理系统。**
+**BCP gives you a governance system for controlling AI development without reading the code.**
 
-你描述你要什么。AI 做。有一个不是 AI 的东西替你检查 AI 有没有撒谎。
+You describe what you want. The AI does it. Something that is not an AI checks whether the AI lied.
 
-你批准设计，代码必须忠实于设计。AI 失败，失败模式自动压缩。经验积累，定期体检。
+You approve the design, and the code must stay faithful to it. When the AI fails, the failure pattern is compressed automatically. Experience accumulates, and the system gets a regular check-up.
 
-**你只需要做领域判断。其他一切，系统替你记住、替你检查、替你沉淀。**
+**All you do is domain judgment. Everything else, the system remembers, checks, and settles for you.**
 
 ---
 
-> **BCP 没有终审结论——每条约定都讲清为什么，且可随账本证据演化。改它 = 改 Markdown，下次会话生效。**
+> **BCP has no final verdict — every convention explains why, and all of it evolves with the evidence in the ledger. Changing it = changing Markdown; it takes effect next session.**
