@@ -1,7 +1,7 @@
 # BCP 项目开发工作流（仅本目录加载）
 
 范式 spec：`README.md`（§5 记忆分层）。项目索引与跨域硬约束：`AGENTS.md`（自动加载）；按域避坑细则在 `.pi/rules/*.md`，由 memory-gate 扩展在首次触碰对应代码域时自动拦截注入——预期行为，吸收后重试同一调用即可，非报错。
-流程：设计决定文档（`Blueprint.md`，项目可选）→ 计划（瞬态）→ 代码 → `/check` 机械检查 → 经验沉淀回 `AGENTS.md` / `Blueprint.md`。
+流程：设计决定文档（`Blueprint.md`，项目可选）→ 计划（瞬态）→ 代码 → `/check` 机械检查 → 经验沉淀回 `.pi/rules/<域>.md`（§4 沉淀协议） / 设计决定回 `Blueprint.md`。
 
 ## 1. 设计（/bcp，项目有 Blueprint.md 时）
 

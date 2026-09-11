@@ -7,7 +7,7 @@
 
 [rule.doc_ghost_paths]
 # R5 引用完整性：文档反引号内断言的仓库路径必须存在（防幽灵基建）
-docs = ["AGENTS.md", "README.md", ".pi/APPEND_SYSTEM.md", ".pi/rules/*.md"]
+docs = ["AGENTS.md", "README.md", ".pi/APPEND_SYSTEM.md", ".pi/rules/*.md", "Blueprint.md"]
 # 运行时数据 / 仓库外产物路径，不作仓库存在性断言（按项目增补）
 # bcp/ledger.jsonl = 范式自产运行时文件：首跑 check 前不存在属常态（新项目从零建 bcp/ 勿断言）
 ignore_prefixes = ["target/", "node_modules/", "deliverables/", "tasks/", "prompts/", "verifications/", "bcp/ledger.jsonl"]

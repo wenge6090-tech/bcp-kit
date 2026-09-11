@@ -106,3 +106,11 @@
 {"ts": "2026-09-11T07:45:36", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
 {"ts": "2026-09-11T08:52:32", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
 {"ts": "2026-09-11T08:52:32", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T09:12:56", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T09:15:52", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T09:15:52", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T17:45:57", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts":"2026-09-11T17:47:45","mode":"gate","verdict":"INJECTED","fail":0,"warn":0,"findings":[],"kind":"domain","target":"bcp","domain":"bcp","file":"/home/vingo/vingo/bcp-kit/.pi/extensions/memory-gate.ts"}
+{"ts":"2026-09-11T17:51:21","mode":"gate","verdict":"INJECTED","fail":0,"warn":0,"findings":[],"kind":"big-read","target":"/home/vingo/vingo/bcp-kit/bcp/check.py"}
+{"ts":"2026-09-11T17:52:34","mode":"gate","verdict":"INJECTED","fail":0,"warn":0,"findings":[],"kind":"big-read","target":"/home/vingo/vingo/bcp-kit/Blueprint.md"}
+{"ts": "2026-09-11T17:57:37", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
