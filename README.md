@@ -260,7 +260,7 @@ classDiagram
 
 > 设计动因：无 cron 环境靠自觉必然衰减——把巡检从自觉变成节律（agent 的代谢是 commit 不是墙钟）；完整论证 Blueprint.md§4.1。
 
-- **触发（入睡）**：memory-gate 第 4 注入点（kind=sleep）——会话首调时检查活动量判据 `当前 commit 数 − 最后一条 evolve 记录的 commits 基准 > 30`，超阈则 block 一次注入提醒（重发即放行，会话只催一次）。冷启动豁免（无记录按 0 起算）；非 git 项目 commit=0 天然 fail-open。
+- **触发（入睡）**：memory-gate 第 4 注入点（kind=sleep）——会话首调检查活动量判据 `当前 commit 数 − 基线 > 30`（**基线 = 账本中最后一条带 `commits` 的 evolve 记录**；PROMOTED/REJECTED 裁决记录无 `commits`，跳过回溯、不重置基线），超阈则 block 一次注入提醒（重发即放行，会话只催一次）。**冷启动 = 账本无基线记录**：真白板（非 git / commit ≤ 30）差值 ≤ 0 天然不触发；收养既有仓库时触发一次**基线引导**——文案明说「尚无巡检记录，跑一次建立基线」而非「经验积压」（冷启动账本无 BCP 经验可积压），跑一次 /sleep 落 REPORT 账即校准。设计与缺陷证据：Blueprint.md§4.5。
 - **执行（清单流，/sleep 命令）**：① 机械对账（evolve.py + selfcheck，零 LLM）→ ② 列清单落盘 `bcp/sleep/<date>-sleep.md`（每条 `- [ ]` 含来源+建议处置）→ ③ **呈元逐条裁决（能垒，阳不得代裁：PROMOTED/REJECTED/降级/删除/挂起）** → ④ 执行+打勾 → ⑤ 清单全勾 → 删清单（过程可丢，账本留痕）。
 - **停止（睡醒）**：醒来 = 新的 evolve REPORT 记录落账（含 commits 对账基准）→ 判据自动归零。睡没睡、裁决了什么，全是账本上的行，不靠任何一方的自觉或记忆。
 - **对碰税 = 显式支付的维护代价**（同生物睡眠不是浪费）：对账即固化（液→固相变的节律入口），打勾即归一化（用进废退的执行面），落账即元觉知——系统在符号层持有一个自我状态模型，并按代谢节律自动发起对它的裁决。
@@ -438,7 +438,7 @@ check 用模型判模型。免疫：对碰器零 LLM。
 | `plan` | check.py | `--plan` 计划检查（含 accept 命令真实执行） |
 | `plan+collision` | check.py | 再加 git 双向对碰：声明了没改 / 改了没声明，双向都 FAIL |
 | `gate` | memory-gate 扩展 | 五种事件，看 `kind` 区分：`domain`（首次触碰某代码域，强制注入该域规则）；`big-read`（整读 >20KB 文件的定位提醒）；`compact-restore`（会话压缩后恢复进度提示）；`skill-recall`（读 `deliverables/*/SKILL.md` 正文 = 技能被召回，纯记账不拦截）；`sleep`（活动量超阈，催一次巡检，§4.7） |
-| `evolve` | evolve.py | 三种：**REPORT**=演化报告器运行的审计记录（本次产出哪些候选）；**PROMOTED / REJECTED**=晋升/结晶候选经人批准/拒绝后的裁决记录，字段 `target`=规则名或技能名（技能裁决必标 `kind:"skill"`）、`source`=来源失败模式标题（可选溯源）、`note`=原因——⑥ 节回放防重复提案；kind=skill 的 PROMOTED 同时是技能注册凭证，⑦ 节与 deliverables 目录双向对碰 |
+| `evolve` | evolve.py | 三种：**REPORT**=演化报告器运行的审计记录（本次产出哪些候选）；**PROMOTED / REJECTED**=晋升/结晶候选经人批准/拒绝后的裁决记录，字段 `target`=规则名或技能名（技能裁决必标 `kind:"skill"`）、`source`=来源失败模式标题（可选溯源）、`note`=原因——⑥ 节回放防重复提案；kind=skill 的 PROMOTED 同时是技能注册凭证，⑦ 节与 deliverables 目录双向对碰。**sleep 闸基线只认带 `commits` 的 REPORT**——裁决记录无该字段，不重置活动量计数（§4.7） |
 | `failure` | agent 按协议追加 | 任务以 FAIL 收尾时的**失败典藏**：`{title, avoidance, domain, repro}` = 标题 + 规避句（≤200 字符）+ 所属域 + 当轮失败命令（只读断言，⑧ 节回放）。只留模式，不留过程——这是给后续任务回注的「别再踩」规则 |
 | `verify` | agent 按元反馈协议追加 | 两态：**pending** = 任务 PASS 收尾时的待验证声明（`id`/`claim`/`items`/`files`/`accept` 快照/`anchors`/`commits` 活动量基准）——阴 PASS 是入场券非完成态；**judged** = 元滞后裁决（`ref`=claim id，`verdicts` 逐项 verified/drift/defect，`attribution` 归因层（environment 不罚 AI 只更新前提），`evidence` 必填，`route` 沉淀路由）。pending 可永久存在；⑧ 节活动量分桶呈报（<10 新鲜 / 10–30 应验证 / >30 可判长期 commits），sleep 只呈报不强制，`/feedback` 主动闭。可选 `prefill`={skill,agree} 预填确认记账（⑧ 确认率 / 降级候选） |
 
@@ -474,7 +474,7 @@ check 用模型判模型。免疫：对碰器零 LLM。
 
 ### 9.4 `--selfcheck`（健康自检）
 
-装完或换宿主后跑一次：报告各闸门依赖是否就绪。`IDLE` = 依赖缺失、闸门空转（形同虚设）；`OK` = 就绪。含 sleep 巡检节律项（活动量 x/30 commit，超阈 IDLE——跑 evolve.py 落账即重置）。退出码恒 0（报告非裁决）。
+装完或换宿主后跑一次：报告各闸门依赖是否就绪。`IDLE` = 依赖缺失、闸门空转（形同虚设）；`OK` = 就绪。含 sleep 巡检节律项（活动量 x/30 commit，超阈 IDLE——跑 evolve.py 落账即重置；基线只认带 `commits` 的 evolve REPORT，账本无基线记录时提示为冷启动基线引导，§4.7）。退出码恒 0（报告非裁决）。
 
 ## 10. 使用指南
 

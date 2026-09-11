@@ -208,6 +208,69 @@ fail-open 律的代价：一切异常伪装成「规则缺失放行」。2026-09
 
 evolve 是唯一数据消费者，报告非裁决（退出码恒 0）。免疫族：JSON 坏行跳过（load_records）→ schema 坏行跳过 + 呈报（⑧ 畸形）→ 幽灵引用呈报（⑦ 幽灵注册 / ⑧ 幽灵裁决同构）→ 重复记录取 ts 最新（verify judged / 晋升候选裁决史交叉标注同族）。**报告器永不死亡、永不静默吞错、永不替裁决。**
 
+### 4.5 sleep 冷启动：基线引导（≠ §4.6 域证据无效期）
+
+**命名辨析（防同名不同义）**：仓内「冷启动」已是两件事——§4.6 / evolve ④ 指的是**域证据无效期**（账本无域注入事件 → 死重判定失效，规则储层维度）；本节指**活动量基线缺失**（账本无 evolve 记录 → baseline=0，睡眠节律维度）。判据、消费端、失效模式全不同，措辞须带限定语，不得互相引用。
+
+**现象**：判据 `commitCount − baseline > 30`，baseline = 最后一条**带 `commits` 字段**的 evolve 记录（= evolve REPORT）。注意 `mode=evolve` 三态混用（REPORT / PROMOTED / REJECTED，README§9.1），裁决记录无 `commits`。三分支：真白板（非 git / 0 commit）→ 差值 0，不触发；新 repo（<30 commit）→ 不触发；**收养既有仓库（>30 commit + 无基线记录）→ 立刻触发一次**。
+
+**三处既存缺陷（2026-09-13 用真件在沙盒复现）**：① `memory-gate.ts` 注释「账本不可读 = 0（冷启动豁免自然成立）」与实现相反——0 基线只在 commit ≤30 时豁免，既有仓库收养必触发；② `kit/host-contract.md` 契约表把「非 git」与「账本不可读」并成一格写「→ 永不触发」：前者成立（commitCount=0），后者不成立（基线 0 而 commitCount 可能 >30 → 触发）。② 是 §4.2「无物对碰 README 承诺↔机械层行为」的活标本。③ `lastReportCommits` 扫到**第一条** `mode=evolve` 即返回，若其为裁决记录（无 `commits`）→ 回退 0 且**停止回溯**，真实 REPORT 基线被丢弃 → 误报；`check.py --selfcheck` 同病（末条 evolve 胜出，同样取 0）。沙盒实复现：REPORT `commits=30` 后追加一条 PROMOTED，32 commit 时闸门误判超阈（真实活动量 = 2）。
+
+**决定（A′：保留触发，改语义与文案）**：这次触发唯一的产物就是基线——跑完 /sleep 五步，evolve 落 REPORT `commits=N`，基线与收养点对齐。故保留，但语义由「液态经验积压」改为**基线引导**：无基线记录时，pulse 文案明说「尚无巡检记录，基线按 0 起算，跑一次建立基线」。无基线记录时账本里没有 BCP 经验，evolve 亦判不出候选——宣称积压是误报。同时按缺陷 ③ 精确化基线定义（只认带 `commits` 的 evolve 记录，跳过裁决记录继续回溯）——否则「无基线记录」本身不可判定。
+
+**被拒（B：隐式 seed 基线）**：冷启动首检落 `SEED` 记录免催。拒因：基线逻辑已三处复制（gate / `check.py --selfcheck` / 宿主契约向量），新增记录类型 + 三处同步债只为省一次空巡检——对碰税一次性 vs 机械面永久，违背最小机械面。复活条件：冷启动打扰被证明为真损失（收养成为主流入口）。
+
+**契约层义务（§5.2）**：「基线缺失」这一维当前在向量集里不可表达——`GateCore` 把基线抽象为注入的 `commit_delta()`，参考实现不建模账本。补 `has_baseline=True` 默认参数（现有向量零改动）+ 1 条冷启动向量。
+
+#### 设计总装图
+
+```mermaid
+flowchart TB
+    TC["tool_call（read/edit/write）"] --> P{"本会话已脉冲？"}
+    P -->|是| PASS["放行"]
+    P -->|否| DELTA{"commitCount − baseline > 30"}
+    DELTA -->|否| PASS
+    DELTA -->|是| HAS{"账本有 evolve 记录？"}
+    HAS -->|有| HOT["文案：液态经验积压"]
+    HAS -->|无| COLD["文案：基线引导（尚无巡检记录）"]
+    HOT --> BLOCK["block:true 催一次（重发放行）"]
+    COLD --> BLOCK
+    BLOCK --> SL["/sleep 五步清单流"]
+    SL --> REP["evolve.py 落 REPORT commits=N"]
+    REP --> ZERO["基线校准到 N → 判据归零（醒来）"]
+    ZERO -.->|"下轮 N′−N > 30"| DELTA
+    PASS -->|"其余三闸门"| GATE["memory-gate"]
+```
+
+#### 判据部件图
+
+```mermaid
+classDiagram
+    class SleepJudge {
+        +活动量 = commitCount − baseline
+        +阈值 30（项目可配）
+        +脉冲资格（每会话一次）
+    }
+    class 基线来源 {
+        evolve REPORT.commits
+        缺失回退 0
+    }
+    class 冷启动分支 {
+        无 evolve 记录 → baseline=0
+        语义：基线引导（非积压）
+        触发域：收养既有仓库
+    }
+    class GatePulse事件 {
+        kind=sleep
+        target=pulse
+        verdict=INJECTED
+    }
+    SleepJudge --> 基线来源
+    SleepJudge --> 冷启动分支
+    SleepJudge --> GatePulse事件
+    基线来源 <|-- 冷启动分支 : 缺失时回退
+```
+
 ---
 
 ## 5. 宿主边界
@@ -218,7 +281,7 @@ evolve 是唯一数据消费者，报告非裁决（退出码恒 0）。免疫�
 
 ### 5.2 行为契约与一致性向量
 
-解法：`kit/host-contract.md` 把四闸门 + 召回记账的行为显式化（触发/动作/一次性语义/fail-open 律/优先级序/账本事件 schema/路径归一化），`kit/host-contract.test.py` 提供零 LLM 一致性向量集（14 条场景 + 参考实现）。移植者流程：目标宿主实现等价闸门 → 薄适配器喂同一向量集 → **全绿才算等价机械层**。抽取过程本身即捕获两只潜伏缺陷（§4.3）——契约显式化前此类静默死亡无传感器。
+解法：`kit/host-contract.md` 把四闸门 + 召回记账的行为显式化（触发/动作/一次性语义/fail-open 律/优先级序/账本事件 schema/路径归一化），`kit/host-contract.test.py` 提供零 LLM 一致性向量集（15 条场景 + 参考实现）。移植者流程：目标宿主实现等价闸门 → 薄适配器喂同一向量集 → **全绿才算等价机械层**。抽取过程本身即捕获两只潜伏缺陷（§4.3）——契约显式化前此类静默死亡无传感器。
 
 ### 5.3 迁移 = 开源主入口
 
@@ -237,6 +300,7 @@ evolve 是唯一数据消费者，报告非裁决（退出码恒 0）。免疫�
 | agent_draft→meta_confirmed 字段翻转 | 违反 append-only；两记录 ref 引用更强（入账即已确认，§2.3） | 无（append-only 是法律） |
 | 隐式反馈全量承诺（转发/仓外重用自动记录） | 对 agent 不可见的信号 = 虚假传感器；只承诺可测的（修改/丢弃/重用） | 宿主提供产物使用事件钩子 |
 | 时间分桶（T+7/T+30 档位） | 活动量分桶更贴 sleep 触发语义与元的真实节奏（§2.4） | 非 git 项目（活动量恒 0）成为主流场景 |
+| 隐式 seed 基线（冷启动落 SEED 记录免催） | 基线逻辑三处复制，新增记录类型 + 同步债只为省一次空巡检（§4.5） | 冷启动打扰被证明为真损失（收养成为主流入口） |
 | 行为模式机械检测器（同键重复 ≥K 提结晶候选） | 「同类」的键控方案未定，v1 由书记员引用账本历史（账本即模式库） | 确认数据积累后按 §4.2 攒证据 |
 | stage 周数阶段机制 | 四阶段是叙事不是机制，不建守护进程（§3.5） | 无 |
 | 运行时文本技能类型 | 未拒——§8.2 待做候选（延迟非否决） | 出现运行时消费端 |

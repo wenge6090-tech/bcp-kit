@@ -474,16 +474,22 @@ def selfcheck() -> int:
     except Exception:
         pass
     n_last = 0
+    has_base = False  # 基线 = 最后一条带 commits 的 evolve 记录（= REPORT，§4.7/Blueprint §4.5）
     if LEDGER.exists():
         for ln in LEDGER.read_text(encoding="utf-8").splitlines():
             try:
                 r = json.loads(ln)
             except json.JSONDecodeError:
                 continue
-            if r.get("mode") == "evolve":
-                n_last = int(r.get("commits") or 0)
+            # 裁决记录 PROMOTED/REJECTED 无 commits：跳过，不重置基线（否则一条裁决记录把计数清零）
+            if r.get("mode") == "evolve" and isinstance(r.get("commits"), int):
+                n_last, has_base = r["commits"], True
     pulse = n_commit - n_last
-    item(pulse <= 30, "sleep 巡检节律", f"活动量 {pulse}/30 commit", f"活动量 {pulse} > 30 未巡检——跑 python3 bcp/evolve.py 落 REPORT 账即重置（/sleep 清单流见 README §4.7）")
+    if has_base:
+        item(pulse <= 30, "sleep 巡检节律", f"活动量 {pulse}/30 commit", f"活动量 {pulse} > 30 未巡检——跑 python3 bcp/evolve.py 落 REPORT 账即重置（/sleep 清单流见 README §4.7）")
+    else:
+        item(n_commit <= 30, "sleep 巡检节律", f"账本无基线记录（commits={n_commit} ≤ 30，冷启动按 0 起算，不触发）",
+             f"账本无基线记录且 commits={n_commit} > 30——冷启动基线引导（非未巡检）：跑 python3 bcp/evolve.py 落 REPORT 账建立基线（README §4.7 / Blueprint §4.5）")
 
     # 工作流逃逸代理（README §4.7）：commit 数 vs plan 记录数——粗代理非裁决，元看数据对账（/sleep）
     item(not (n_commit > 30 and n_plan * 5 < n_commit), "工作流逃逸代理", f"commits={n_commit} plan记录={n_plan}", "高 commit 低 plan 记录——疑有任务绕过计划流，跑 /sleep 对账清单核查")

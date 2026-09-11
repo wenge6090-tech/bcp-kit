@@ -44,18 +44,22 @@ const SLEEP_COMMIT_THRESHOLD = 30;
 
 const BIG_READ_BYTES = BIG_READ_KB * 1024;
 
-// ── sleep 闸 helpers（README §4.7）：活动量 = 当前 commit 数 − 最后一条 evolve 记录的 commits 基准 ──
-function lastReportCommits(root: string): number {
+// ── sleep 闸 helpers（README §4.7 / Blueprint §4.5）：活动量 = 当前 commit 数 − 基线 ──
+// 基线 = 账本中最后一条「mode=evolve 且带数值 commits」的记录（= evolve REPORT）。
+// mode=evolve 三态混用（REPORT / PROMOTED / REJECTED，README §9.1）：裁决记录无 commits，
+// 必须跳过继续回溯——否则一条裁决记录就把基线清零 → 误报超阈（2026-09-13 真件沙盒复现）。
+// 返回 null = 账本无基线记录（冷启动，Blueprint §4.5）；账本缺失/不可读同样 null（fail-open）。
+function lastReportCommits(root: string): number | null {
 	try {
 		const lines = readFileSync(join(root, "bcp", "ledger.jsonl"), "utf-8").trim().split("\n");
 		for (let i = lines.length - 1; i >= 0; i--) {
 			const r = JSON.parse(lines[i]) as { mode?: string; commits?: number };
-			if (r.mode === "evolve") return typeof r.commits === "number" ? r.commits : 0;
+			if (r.mode === "evolve" && typeof r.commits === "number") return r.commits;
 		}
 	} catch {
-		/* 冷启动/账本不可读 = 0（冷启动豁免自然成立） */
+		/* 账本缺失/不可读 = 无基线记录（fail-open 放行，不阻断） */
 	}
-	return 0;
+	return null;
 }
 
 function commitCount(root: string): number {
@@ -124,15 +128,21 @@ export default function memoryGate(pi: ExtensionAPI) {
 		const root = projectRoot(sessionCwd); // 账本/ROUTES 基准 = 工具包根；相对路径解析仍按会话 cwd（agent 语义不变）
 		const abs = resolve(sessionCwd, raw);
 
-		// sleep 闸（README §4.7）：活动量超阈 → 催一次巡检（正反旋转：阴对账列清单，阳执行打勾，元独占裁决）
+		// sleep 闸（README §4.7 / Blueprint §4.5）：活动量超阈 → 催一次巡检（正反旋转：阴对账列清单，阳执行打勾，元独占裁决）
 		if (!sleepPulsed) {
 			sleepPulsed = true;
-			if (commitCount(root) - lastReportCommits(root) > SLEEP_COMMIT_THRESHOLD) {
+			const base = lastReportCommits(root); // null = 账本无基线记录（冷启动）
+			if (commitCount(root) - (base ?? 0) > SLEEP_COMMIT_THRESHOLD) {
 				logGate(root, "sleep", "pulse", "INJECTED");
+				// 无基线记录时是「基线引导」不是「经验积压」：账本里没有 BCP 经验，宣称积压是误报
+				const why =
+					base === null
+						? `账本尚无巡检记录（基线按 0 起算）——这是基线引导，不是经验积压：跑一次巡检建立基线（evolve.py 落 REPORT 账即校准，此后每 ${SLEEP_COMMIT_THRESHOLD} 个 commit 催一次）。`
+						: `自上次巡检以来活动量已超 ${SLEEP_COMMIT_THRESHOLD} 个 commit——液态经验在积压，固态储层待归一化。`;
 				return {
 					block: true,
 					reason:
-						`[memory-gate] sleep 闸：自上次巡检以来活动量已超 ${SLEEP_COMMIT_THRESHOLD} 个 commit——液态经验在积压，固态储层待归一化。` +
+						`[memory-gate] sleep 闸：${why}` +
 						`执行 sleep 巡检（/sleep 命令或按 README §4.7 清单流）：机械对账（evolve.py + check.py --selfcheck）→ 列清单 → 元逐条裁决 → 打勾 → ` +
 						`清单完成即重跑 evolve.py 落 REPORT 账（sleep 结束，本闸自动重置）。` +
 						`本次调用已标记已催，重发即放行。`,

@@ -21,13 +21,15 @@ class Action:
 class GateCore:
     """契约 §2/§3 的纯函数化参考：依赖全部注入（rules_reader/size_of/commit_delta）。"""
 
-    def __init__(self, *, routes, big_read_bytes, sleep_threshold, rules_reader, size_of, commit_delta):
+    def __init__(self, *, routes, big_read_bytes, sleep_threshold, rules_reader, size_of, commit_delta,
+                 has_baseline=True):
         self.routes = routes                    # [(绝对前缀, 域)]
         self.big_read_bytes = big_read_bytes
         self.sleep_threshold = sleep_threshold
         self.rules_reader = rules_reader        # domain -> str | None（None=缺失→fail-open）
         self.size_of = size_of                  # path -> int | None（None=stat 失败→放行）
         self.commit_delta = commit_delta        # () -> int
+        self.has_baseline = has_baseline        # 账本有无基线记录（§4.5）；False = 冷启动 → 文案分支
         self.events: list[dict] = []            # 账本事件（mode=gate）
         self.injected_domains: set[str] = set()
         self.big_read_warned: set[str] = set()
@@ -48,7 +50,9 @@ class GateCore:
             self.sleep_pulsed = True
             if self.commit_delta() > self.sleep_threshold:
                 self._log("sleep", "pulse", "INJECTED")
-                return Action(True, "sleep pulse：催巡检")
+                # 无基线记录 = 冷启动：文案为「基线引导」而非「经验积压」（Blueprint §4.5）
+                return Action(True, "sleep pulse：基线引导（账本尚无巡检记录）" if not self.has_baseline
+                              else "sleep pulse：催巡检")
         # ② compact-restore（每次压缩后一次）
         if self.compacted:
             self.compacted = False
@@ -85,12 +89,12 @@ ROUTES = [("/repo/bcp/", "bcp"), ("/repo/.pi/extensions/", "bcp")]
 RULES = {"bcp": "RULES-BCP-TEXT"}
 
 
-def harness(rules=RULES, sizes=None, delta=0):
+def harness(rules=RULES, sizes=None, delta=0, has_baseline=True):
     sizes = sizes or {}
     return GateCore(
         routes=ROUTES, big_read_bytes=20 * 1024, sleep_threshold=30,
         rules_reader=lambda d: rules.get(d), size_of=sizes.get,
-        commit_delta=lambda: delta,
+        commit_delta=lambda: delta, has_baseline=has_baseline,
     )
 
 
@@ -129,6 +133,10 @@ VECTORS: list[dict] = [
     ]),
     dict(name="v_sleep_threshold_boundary", h=lambda: harness(delta=30), steps=[
         (None, "read", "/repo/src/a.rs", (False, None, None)),  # = 阈值不触发（严格大于）
+    ]),
+    dict(name="v_sleep_coldstart_bootstrap_text", h=lambda: harness(delta=31, has_baseline=False), steps=[
+        # 冷启动（账本无基线记录）：仍拦截，但文案 = 基线引导，不得宣称经验积压（Blueprint §4.5）
+        (None, "read", "/repo/src/a.rs", (True, "基线引导", ("sleep", "INJECTED"))),
     ]),
     dict(name="v_priority_sleep_over_compact", h=lambda: harness(delta=31), steps=[
         (lambda g: g.on_session_compact(), "read", "/repo/src/a.rs", (True, "sleep", ("sleep", "INJECTED"))),
