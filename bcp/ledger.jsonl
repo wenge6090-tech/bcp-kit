@@ -81,3 +81,28 @@
 {"ts": "2026-09-11T00:38:50", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
 {"ts": "2026-09-11T00:38:50", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
 {"ts": "2026-09-11T00:38:50", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts":"2026-09-11T00:59:05","mode":"gate","verdict":"INJECTED","fail":0,"warn":0,"findings":[],"kind":"big-read","target":"/home/vingo/vingo/bcp-kit/README.md"}
+{"ts":"2026-09-11T01:05:11","mode":"gate","verdict":"FAIL_OPEN","fail":0,"warn":0,"findings":[],"kind":"domain","target":"bcp"}
+{"ts":"2026-09-11T01:05:26","mode":"evolve","verdict":"PROMOTED","kind":"skill","target":"systems-engineering-meta","source":"系统工程门槛（README §10.1）会话设计结晶，元批准"}
+{"ts": "2026-09-11T01:05:29", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T01:05:31", "mode": "evolve", "verdict": "REPORT", "commits": 22, "fail": 0, "warn": 4, "findings": [{"rule": "evolve-report", "sev": "WARN", "msg": "降级候选: R7-explore-purity(§2.3)"}, {"rule": "evolve-report", "sev": "WARN", "msg": "强化证据: R5-doc-ghost-paths(引用完整性) 窗口内28"}, {"rule": "evolve-report", "sev": "WARN", "msg": "强化证据: R6-plan-collision 窗口内17"}, {"rule": "evolve-report", "sev": "WARN", "msg": "强化证据: R8-skill-contract(§2.4) 窗口内4"}], "window": 30, "min_hits": 3, "cold_start": false}
+{"ts": "2026-09-11T01:09:51", "mode": "plan+collision", "verdict": "FAIL", "fail": 1, "warn": 0, "findings": [{"rule": "R6-plan-collision", "sev": "FAIL", "msg": "改动未声明 deliverables/systems-engineering-meta/SKILL.md（改了没声明 → 更新 files 或回退改动）"}], "findings_truncated": 0}
+{"ts": "2026-09-11T01:10:06", "mode": "plan+collision", "verdict": "FAIL", "fail": 1, "warn": 0, "findings": [{"rule": "R7-explore-purity(§2.3)", "sev": "FAIL", "msg": "产出原始轨迹（SKILL.md）/ skill_evolution 任务必须 mode: explore（元裸跑，禁先验注入 → 改计划）"}], "findings_truncated": 0}
+{"ts": "2026-09-11T01:10:24", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T01:11:01", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T01:24:10", "mode": "plan+collision", "verdict": "FAIL", "fail": 1, "warn": 0, "findings": [{"rule": "R6-plan-collision", "sev": "FAIL", "msg": "改动未声明 deliverables/systems-engineering-meta/SKILL.md（改了没声明 → 更新 files 或回退改动）"}], "findings_truncated": 0}
+{"ts": "2026-09-11T01:24:20", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T01:24:40", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts":"2026-09-11T07:18:55","mode":"gate","verdict":"INJECTED","fail":0,"warn":0,"findings":[],"kind":"domain","target":"bcp","domain":"bcp","file":"/home/vingo/vingo/bcp-kit/bcp/plans/verify-protocol.plan.md"}
+{"ts":"2026-09-11T07:19:52","mode":"verify","state":"pending","id":"20260911-meta-skill","claim":"系统工程元技能结晶并注册（deliverables/systems-engineering-meta）","items":["P1","P2"],"files":["deliverables/systems-engineering-meta/SKILL.md"],"accept":["evolve ⑦ 已注册"],"anchors":["README.md§2.4"],"commits":22}
+{"ts":"2026-09-11T07:19:52","mode":"verify","state":"pending","id":"20260911-readme-align","claim":"README 范式对齐（元技能落档+砍幽灵 declaration.yaml+挂载路径写实）","items":["R1","R2"],"files":["README.md"],"accept":["静态 check PASS"],"anchors":["README.md§2.4","README.md§10.1"],"commits":22}
+{"ts":"2026-09-11T07:19:52","mode":"verify","state":"pending","id":"20260911-sensors","claim":"三过渡假设传感器（repro 回放/证据指针/宿主契约+14 向量）+ memory-gate 两缺陷修复","items":["T1","T2","T3"],"files":["kit/host-contract.md","kit/host-contract.test.py","bcp/evolve.py",".pi/extensions/memory-gate.ts"],"accept":["python3 kit/host-contract.test.py"],"anchors":["README.md§8.1","README.md§4.4"],"commits":22}
+{"ts":"2026-09-11T07:19:52","mode":"verify","state":"pending","id":"20260911-verify-protocol","claim":"元反馈协议（claim/judged 两态+活动量分桶+书记员纪律）——自举：协议当天进自己的债务队列","items":["W1","W2","W3","W4"],"files":["bcp/evolve.py",".pi/prompts/feedback.md"],"accept":["evolve ⑧ 元验证债分桶可见"],"anchors":["README.md§9.1"],"commits":22}
+{"ts": "2026-09-11T07:20:07", "mode": "evolve", "verdict": "REPORT", "commits": 22, "fail": 0, "warn": 3, "findings": [{"rule": "evolve-report", "sev": "WARN", "msg": "强化证据: R5-doc-ghost-paths(引用完整性) 窗口内28"}, {"rule": "evolve-report", "sev": "WARN", "msg": "强化证据: R6-plan-collision 窗口内19"}, {"rule": "evolve-report", "sev": "WARN", "msg": "强化证据: R8-skill-contract(§2.4) 窗口内4"}], "window": 30, "min_hits": 3, "cold_start": false}
+{"ts": "2026-09-11T07:20:12", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T07:25:52", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T07:26:12", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T07:35:14", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T07:45:36", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T08:52:32", "mode": "plan+collision", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}
+{"ts": "2026-09-11T08:52:32", "mode": "static", "verdict": "PASS", "fail": 0, "warn": 0, "findings": [], "findings_truncated": 0}

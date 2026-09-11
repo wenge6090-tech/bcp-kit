@@ -9,6 +9,8 @@
 > 4. git porcelain 含空格文件名带引号——解析不剥 = 双向对碰两头错 → strip 引号
 > 5. 计划 accept 命令引号嵌套——JSON→shell 双层转义拆命令 → 只用简单词/grep -E
 > 6. 删除型任务与 R6 files 冲突——存在性断言与删除验收必矛盾 → 删除目标走 accept
+> 7. 跨任务未提交变更集污染对碰——git status 全量对账 → 先提交或共声明（SKILL.md 共声明触发 R7）
+> 8. gate 改动无冒烟 = 静默死亡——异常被 catch 吞成 fail-open → 改后必跑契约向量/真触发验证
 
 ## 模式 1：gate↔evolve 字段契约错位
 
@@ -29,7 +31,7 @@
 - **问题**：在真实 ledger.jsonl 上验证冷启动/空账本行为，污染不可回滚的证据流。
 - **根因**：append-only 是 §4.3 法律，测试写入会永久混入 evolve 生产统计。
 - **证据**：同上任务沙盒流程验证（cp 仓库→git init→重建空 ledger）。
-- **规避句**：机械件测试一律沙盒；evolve 验冷启动用 `--ledger` 指空文件，勿碰真实账本。
+- **规避句**：机械件测试一律沙盒；evolve 验冷启动用 `--ledger` 指空文件，勿碰真实账本。沙盒向量必须含畸形记录（schema 坏行/幽灵引用/重复记录）——报告器对坏 schema 必须「跳过+呈报」而非崩溃或静默混入（2026-09-11 ⑧ 审查实测：list 型 verdicts 直接 AttributeError 崩溃）。
 
 ## 模式 4：git porcelain 对含空格文件名加引号
 
@@ -44,6 +46,20 @@
 - **证据**：2026-09-12 去外部化清洗任务实测（先删后碰 2 FAIL；恢复后碰 3 FAIL；failure 已入账）。
 - **规避句**：删除型任务 files 只列修改/新建目标；删除验收走 accept（`test ! -f`）；对碰在删除 staged 后跑（R6 已排除 porcelain D 状态）。
 - **规避句**：解析 git porcelain 输出必须 strip 引号；仓库文件名避免空格（消边缘 case 优于加代码）。
+
+## 模式 7：跨任务未提交变更集污染对碰
+
+- **问题**：上一任务的未提交改动（如新结晶的技能文件）留在工作树，本任务计划对碰报「改动未声明」FAIL，两任务互不相关也中招。
+- **根因**：R6 collision 的 changed 集来自 git status 全量工作树（跨任务累积），declared 集只含当前计划 files——变更集未提交时两集必然错位。
+- **证据**：2026-09-11 元技能 README 对齐任务实测（SKILL.md 未提交，首轮 FAIL；同会话还因 `;` 连接致 FAIL 后仍删了计划文件，被迫重建）。
+- **规避句**：对碰前先提交上一任务，或在计划 files 中共声明同处变更集的文件；共声明 SKILL.md 会触发 R7 强制 mode: explore（内容源须为元批准/裸跑，非先验召回）；check 后续动作用 && 链，FAIL 不续跑。
+
+## 模式 8：gate 改动无冒烟 = 静默死亡
+
+- **问题**：memory-gate 两处缺陷长期潜伏无人知觉：①域注入读规则用游离变量 `cwd`，ReferenceError 被 catch 吞成 fail-open——闸门①实际已死；② skill-recall 正则无捕获组，JS `dm[1]`=undefined → target 静默丢失，evolve 统计成 `?` 假域。TypeScript 能加载 ≠ 行为正确。
+- **根因**：fail-open 律是双刃剑——不死锁的代价是一切异常都伪装成「规则缺失放行」；且召回事件从未发生过（召回=0），缺陷无自然触发机会。
+- **证据**：2026-09-11 宿主契约抽取任务：契约向量集一跑即抓出（参考实现复现 IndexError；账本两处 FAIL_OPEN 为前者尾迹）；ledger 无任何 skill-recall 事件为后者佐证。
+- **规避句**：改 memory-gate 后必跑 `python3 kit/host-contract.test.py`（14 向量含规则在/缺、捕获组、优先级序）+ 真触发一次域触碰验证 INJECTED 落账；不许只信 TypeScript 加载成功。
 
 ## 模式 5：计划 accept 命令的引号纪律
 

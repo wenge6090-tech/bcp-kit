@@ -1,5 +1,5 @@
 # bcp-kit — BCP 蓝图完形协议
-
+本 README 同时承担 bcp-kit 的设计蓝图（B）职能，因其内容即范式 spec；其他项目使用 BCP 时，README 与 Blueprint.md 应分离。
 > 开发范式工具包。开发只有三方：**元**（用户）定方向、**阳**（LLM）完形产出、**阴**（符号系统）机械裁决并记账。
 > 本文档既是范式说明也是使用说明。范式没有终审结论——每条约定都讲清为什么，且可随账本证据演化（§4）；改它 = 改 Markdown，下次会话生效。
 
@@ -17,7 +17,7 @@
     └── 全勾 → 删单 → REPORT 落账 ────▶ 计数归零，醒来（§4.7）
 ```
 
-四个工件沿链相变：**B 设计**（固，元批准）→ **P 计划**（气态内容物，agent 消费）→ **C 代码**（固，唯一实现事实）→ **A 规则**（液，回流沉淀）。经验规则反复被召回/验证后，经门控结晶为 **S 技能**（固，液→固相变，§2.4/§4.2）。两个关键相位：**阳完形**（LLM 填空，与组装并列的两个概率相位之一）与**阴对碰**（零 LLM 机械裁决）。一条代谢节律：**sleep 巡检**（§4.7）——主链产出的 commit 即活动量，超阈触发机械对账→元裁决清单流→打勾落账即醒；经验积压与储层熵增不靠自觉清理，靠节律。
+四个工件沿链相变：**B 设计**（固，元批准）→ **P 计划**（气态内容物，agent 消费）→ **C 代码**（固，唯一实现事实）→ **A 规则**（液，回流沉淀）。经验规则反复被召回/验证后，经门控结晶为 **S 技能**（固，液→固相变，§2.4/§4.2）。两个关键相位：**阳完形**（LLM 填空，与组装并列的两个概率相位之一）与**阴对碰**（零 LLM 机械裁决）。一条代谢节律：**sleep 巡检**（§4.7）——主链产出的 commit 即活动量，超阈触发机械对账→元裁决清单流→打勾落账即醒；经验积压与储层熵增不靠自觉清理，靠节律。一条滞后验证轴：**元反馈**（§9.1 mode=verify，claim/judged 两态）——阴 PASS 是入场券非完成态，claim 挂账随活动量熟成，sleep 批量呈元终审；元持有最终验证权，滞后是特性（对真实使用验证）不是缺陷。
 
 > 配套工件（§8.1 最小契约）：转化协议 `plan.md`（P 的 schema）· 工作流内核 `.pi/APPEND_SYSTEM.md`（A 的注入样本）· 机械对碰器 `bcp/check.py` + `bcp/bcp.toml`（阴）· 证据账本 `bcp/ledger.jsonl` · 实现事实 `AGENTS.md`。
 >
@@ -113,10 +113,12 @@
 
 > 技能是液态经验（避坑规则、裸跑轨迹）经提炼与门控结晶成的固态资产：比规则更结构化（适用条件+操作程序+验证凭证），比蓝图更可执行。实证：纯文本 Markdown 规则平均 +17~24% 且跨模型迁移好；强制编译 Python 的工程成本（编译耗时 / 冒烟压测）在绝大多数场景 ROI 为负。
 
-- **默认产物双轨**：阳产出 `deliverables/SKILL.md`（纯文本规则 + Frontmatter 元数据）+ `deliverables/declaration.yaml`（结构化自声明）。
+- **默认产物 = 文本单轨**：阳产出 `deliverables/<name>/SKILL.md`（纯文本规则 + Frontmatter 元数据）；结构化自声明（declaration.yaml）为候选扩展，未实现不强制。
 - **编译降级为可选优化**：Python 固化仅在 ① 人类显式 `--compile-python`，或 ② 文本规则验证集成功率 ≥95% 时触发一次；其余场景文本即技能。
 - **与「执行体统一 Python」约定不冲突**：文本技能走 prompt 注入轨道，不是机械执行体；运行时文本技能类型为候选扩展（§8.2 待做）。
-- **机械衔接**：① 结构闸 **R8**（check.py）——`deliverables/<name>/SKILL.md` 必须带 frontmatter 三件套（`name`/`description`/`validation`）+「适用条件」节 +「溯源」节，无结构不结晶（无目录静默跳过）；② 召回挂载——pi 宿主在 `.pi/settings.json` 挂 `deliverables`（**渐进披露：description 一行常驻系统提示、正文按需读**，全局可见受 §6 墙约束；技能是任务语义匹配，不绑代码路径域；可选 `domains: [...]` 字段仅作分组统计）；③ 召回记账——memory-gate 对读技能正文追加 `kind=skill-recall` 事件，evolve ⑦ 节统计（召回=0 = 死重候选）；④ **注册对碰**——注册凭证 = ledger `PROMOTED` 裁决记录（`kind:"skill"`, `target`=技能名，结晶经能垒的账本证据）；⑦ 节双向对碰：有目录无记录=绕能垒结晶，有记录无目录=幽灵注册（R6 声明↔实现同构）。
+- **机械衔接**：① 结构闸 **R8**（check.py）——`deliverables/<name>/SKILL.md` 必须带 frontmatter 三件套（`name`/`description`/`validation`）+「适用条件」节 +「溯源」节，无结构不结晶（无目录静默跳过）；② 召回挂载——pi 宿主在 `.pi/settings.json` 挂 `../deliverables`（**渐进披露：description 一行常驻系统提示、正文按需读**，全局可见受 §6 墙约束；技能是任务语义匹配，不绑代码路径域；可选 `domains: [...]` 字段仅作分组统计）；③ 召回记账——memory-gate 对读技能正文追加 `kind=skill-recall` 事件，evolve ⑦ 节统计（召回=0 = 死重候选）；④ **注册对碰**——注册凭证 = ledger `PROMOTED` 裁决记录（`kind:"skill"`, `target`=技能名，结晶经能垒的账本证据）；⑦ 节双向对碰：有目录无记录=绕能垒结晶，有记录无目录=幽灵注册（R6 声明↔实现同构）。
+- **元技能·引导型（方向反转，旗舰示例 systems-engineering-meta）**：操作程序指导阳**向元提问**而非自行施工——系统工程方法论外包给阳，元只裁决领域后果（能垒不变，阳不得代批）。产物 = 设计草稿 Blueprint.draft.md（边界/接口/约束/验收四段 + 元问答≥3 + 预演冲突≥1——对话证据落盘，可事后审计），元批准后并入 Blueprint.md 落章节编号，下游计划锚受 R6 悬空检查。门槛转移：领域专家无需懂系统工程，只需判断领域后果翻译是否符合直觉（§10.1）。
+- **元技能·预填型（面向元的反馈/裁决，双螺旋另一股）**：同一 §2.4 轨道（R8/召回/注册零改动），差异在注入时机（反馈访谈/裁决呈报而非任务组装）与内容（元的归因模式/裁决偏好，预填为草稿）——只预填不代填；活性 = 召回计数 + 确认率（judged `prefill` 字段，⑧ 聚合，低于阈值呈降级候选）。来源 = 元行为模式沉淀或显式教学，结晶经同一能垒；冷启动期零元技能为常态。
 
 ## 3. 阴：机械对碰
 
@@ -129,6 +131,7 @@
 - **失败必须标注断的是哪个接缝**：组装错改计划，完形错改代码，两类错误两类打回，不混。
 - **check 禁止 LLM judge**：概率验证概率 = 阳自查自证。对碰器只能是确定性程序（grep/AST/命令执行/diff）。
 - **门控顺序（双保险，符号阀前置）**：① 经验阀——验证集分数上涨只产生**采纳候选**；② 符号阀——`check.py --collision` 的引用悬空类机械检查（模板开箱 R5–R8；注入风险 / 路径逃逸等为项目专属，按 §5.4 案例凝结进 R1–R4）**一票否决**，验证集满分不抵消符号 FAIL。统计分数进不了判据表，只能决定候选优先级——软分数可以提效，不可以越权。
+- **双轨验证原则**：阴 PASS 是必要条件非充分——声明与机械事实一致 ≠ 现实中有用。元反馈（`mode=verify` 两态：claim pending / judged）滞后但真实，元持有最终验证权；元反馈不翻案机械裁决，机械裁决不替代元验证；pending 是待办标记非阻塞标记，可永久存在、不自动 verified（§9.1）。
 
 ## 4. 固化回流
 
@@ -195,7 +198,7 @@ flowchart LR
 ### 4.4 evolve.py 报告器（零 LLM，纯标准库，守 §8.1 移植契约）
 
 - 输入：`bcp/ledger.jsonl` + check.py 源中的规则名注册表（正则机械提取 seam 表键，不建副本）+ `.pi/rules/` 清单。
-- 输出：纯文本报告七节（见 §9.3）。
+- 输出：纯文本报告八节（见 §9.3）。
 - 参数：`--window N`（天，默认 30）、`--min-hits M`（默认 3）、`--ledger <path>`（默认 `bcp/ledger.jsonl`，测试可指向空账本验冷启动）。退出码恒 0（报告非裁决）。
 - 每次运行追加 mode=evolve 审计记录（候选以 findings WARN 形式入账，含 `commits` 对账基准——sleep 触发判据的消费端，§4.7）。
 
@@ -210,6 +213,7 @@ classDiagram
         +demote_candidates(window) Vec
         +promote_candidates(min_hits) Vec
         +skill_assets() 召回计数+注册对碰
+        +verify_debt_replay() ⑧：回放/验证债分桶/确认率
         +report(commits) 对账基准落账
     }
     class LedgerRecord {
@@ -374,7 +378,7 @@ check 用模型判模型。免疫：对碰器零 LLM。
 
 ### 8.1 最小契约
 
-三文档（本 README / `plan.md` 协议 / A 内核）+ 一个对碰器（`bcp/check.py`，规则外置 `bcp/bcp.toml`）+ 一条账本（`bcp/ledger.jsonl`）。对碰器只依赖 Python 3.11+ 标准库，随项目移植时复制 `bcp/` 与三文档协议即可。
+三文档（本 README / `plan.md` 协议 / A 内核）+ 一个对碰器（`bcp/check.py`，规则外置 `bcp/bcp.toml`）+ 一条账本（`bcp/ledger.jsonl`）。对碰器只依赖 Python 3.11+ 标准库，随项目移植时复制 `bcp/` 与三文档协议即可。注入层（记忆分层/墙纪律的宿主执行体）的行为契约显式化于 `kit/host-contract.md`（一致性向量 `kit/host-contract.test.py`）——换宿主重写等价机械层时以此为对碰面，不猜适配层源码。
 
 ### 8.2 落地状态
 
@@ -402,7 +406,7 @@ check 用模型判模型。免疫：对碰器零 LLM。
 |---|---|
 | `ts` | 时间戳 |
 | `mode` | 谁写的 + 什么场景，见下表 |
-| `verdict` | 结果：`PASS` / `FAIL`（check 裁决）；`INJECTED`（gate 注入成功）；`FAIL_OPEN`（gate 规则文件缺失，放行不阻断）；`REPORT`（evolve 报告） |
+| `verdict` | 结果：`PASS` / `FAIL`（check 裁决）；`INJECTED`（gate 注入成功）；`FAIL_OPEN`（gate 规则文件缺失，放行不阻断）；`REPORT`（evolve 报告）；`PROMOTED` / `REJECTED`（evolve 裁决记录，⑥ 节回放防重复提案） |
 | `fail` / `warn` | 本条记录中 FAIL / WARN 级发现的条数 |
 | `findings` | 发现清单，每条 `{rule, sev, msg}`：`rule`=触发的规则名（见 9.2），`sev`=严重级（FAIL 阻断 / WARN 提示），`msg`=内容与修复方向 |
 
@@ -415,7 +419,8 @@ check 用模型判模型。免疫：对碰器零 LLM。
 | `plan+collision` | check.py | 再加 git 双向对碰：声明了没改 / 改了没声明，双向都 FAIL |
 | `gate` | memory-gate 扩展 | 五种事件，看 `kind` 区分：`domain`（首次触碰某代码域，强制注入该域规则）；`big-read`（整读 >20KB 文件的定位提醒）；`compact-restore`（会话压缩后恢复进度提示）；`skill-recall`（读 `deliverables/*/SKILL.md` 正文 = 技能被召回，纯记账不拦截）；`sleep`（活动量超阈，催一次巡检，§4.7） |
 | `evolve` | evolve.py | 三种：**REPORT**=演化报告器运行的审计记录（本次产出哪些候选）；**PROMOTED / REJECTED**=晋升/结晶候选经人批准/拒绝后的裁决记录，字段 `target`=规则名或技能名（技能裁决必标 `kind:"skill"`）、`source`=来源失败模式标题（可选溯源）、`note`=原因——⑥ 节回放防重复提案；kind=skill 的 PROMOTED 同时是技能注册凭证，⑦ 节与 deliverables 目录双向对碰 |
-| `failure` | agent 按协议追加 | 任务以 FAIL 收尾时的**失败典藏**：`{title, avoidance, domain}` = 标题 + 规避句（≤200 字符）+ 所属域。只留模式，不留过程——这是给后续任务回注的「别再踩」规则 |
+| `failure` | agent 按协议追加 | 任务以 FAIL 收尾时的**失败典藏**：`{title, avoidance, domain, repro}` = 标题 + 规避句（≤200 字符）+ 所属域 + 当轮失败命令（只读断言，⑧ 节回放）。只留模式，不留过程——这是给后续任务回注的「别再踩」规则 |
+| `verify` | agent 按元反馈协议追加 | 两态：**pending** = 任务 PASS 收尾时的待验证声明（`id`/`claim`/`items`/`files`/`accept` 快照/`anchors`/`commits` 活动量基准）——阴 PASS 是入场券非完成态；**judged** = 元滞后裁决（`ref`=claim id，`verdicts` 逐项 verified/drift/defect，`attribution` 归因层（environment 不罚 AI 只更新前提），`evidence` 必填，`route` 沉淀路由）。pending 可永久存在；⑧ 节活动量分桶呈报（<10 新鲜 / 10–30 应验证 / >30 可判长期 commits），sleep 只呈报不强制，`/feedback` 主动闭。可选 `prefill`={skill,agree} 预填确认记账（⑧ 确认率 / 降级候选） |
 
 ### 9.2 check.py 规则（R1–R8）
 
@@ -432,7 +437,7 @@ check 用模型判模型。免疫：对碰器零 LLM。
 
 每条 FAIL 裁决自带修复方向：改代码 / 改文档 / 改计划（R6 按条目标注）。
 
-### 9.3 evolve.py 报告七节
+### 9.3 evolve.py 报告八节
 
 定期手动跑，产出晋升/降级**候选数据**（报告非裁决，裁决权在元，§4.5）：
 
@@ -445,6 +450,7 @@ check 用模型判模型。免疫：对碰器零 LLM。
 | ⑤ 强化证据 | 窗口内高频 FAIL 规则 | 同 ①，聚焦近期 |
 | ⑥ 晋升裁决史 | 历次 PROMOTED/REJECTED 裁决记录 | 被拒候选勿重复提案 |
 | ⑦ 技能资产 | deliverables/*/SKILL.md 清单 + 召回计数 | 召回=0 的技能是死重候选（结晶后没人用 = 该回炉或删除） |
+| ⑧ 假设检验 | 失败典藏 repro 回放（仍失败 = 回归嫌疑）+ 裁决记录证据指针审计 + 元验证债（pending 活动量分桶 / verdict 统计 / DEFECT 率）+ 幽灵裁决·畸形呈报 + 预填确认率（元技能降级候选） | 范式→机械层过渡假设的机械传感器：规避句是假设，回放才成结论；缺 evidence = 能垒保真债；pending 积压 = 元验证债，只呈报不强制；确认率低 = 元技能降级候选 |
 
 ### 9.4 `--selfcheck`（健康自检）
 
@@ -463,16 +469,17 @@ BCP 的三相循环为「人不在场 + 无现成裁判」的开放域设计（�
 | 需要跨会话、跨模型、跨人员的经验累积 | 一次性脚本、探索性原型 |
 
 装错域 = 给自带裁判器的域上重机制，白付对碰税。
+前置门槛同构：领域专家不熟悉系统工程方法论（边界/接口/约束/验收怎么划）不构成排除条件——元技能 `deliverables/systems-engineering-meta/SKILL.md` 把方法论外包给阳，元只裁决领域后果（§2.4 元技能）。
 
 ### 10.2 两层结构（诚实边界）
 
 | 层 | 件 | 归属 |
 |---|---|---|
-| 工具包 · **真宿主无关** | 本 README（含范式 spec） · `plan.md` · `bcp/`（check.py / bcp.toml / evolve.py / ledger） · `deliverables/`（技能资产，可选轨道） | 复制到任何项目，只依赖 Python 3.11+ 标准库（§8.1 最小契约） |
+| 工具包 · **真宿主无关** | 本 README（含范式 spec） · `plan.md` · `bcp/`（check.py / bcp.toml / evolve.py / ledger） · `deliverables/`（技能资产轨道，可选；自带旗舰示例 systems-engineering-meta，随包分发） | 复制到任何项目，只依赖 Python 3.11+ 标准库（§8.1 最小契约） |
 | 工具包 · **pi 专属适配** | `.pi/`（APPEND_SYSTEM 工作流 + memory-gate 四闸门 + bcp-check + prompts） | **换宿主 = 必须重写等价的机械注入层**，否则 §5 四层记忆分层与 §6 墙纪律只落地一半 |
 | 项目实例 | `AGENTS.md`（项目索引） · `Blueprint.md`（可选设计文档） · `.pi/rules/*.md` · `bcp/plans/` | 各项目自养 |
 
-`kit/` 为分发件（实例骨架 + pre-commit 模板），**不随项目复制**（防副本腐烂，§7.4）。
+`kit/` 为分发件（实例骨架 + pre-commit 模板 + 宿主行为契约与一致性向量），**不随项目复制**（防副本腐烂，§7.4）。
 
 ### 10.3 新项目快速开始
 
@@ -498,8 +505,10 @@ python3 bcp/check.py --selfcheck
 | memory-gate 域注入 | 首次触碰 ROUTES 域文件 | block + 注入 `.pi/rules/<域>.md` 全文 |
 | memory-gate 大文件附注 | read >20KB（每文件一次） | 提示先 grep 定位再 offset/limit 定点读 |
 | memory-gate compaction 恢复 | `session_compact` 后首次工具调用 | 注入"重读计划文件"（计划 = 执行状态 Σt；摘要只当导航，状态以计划勾选为准，§6） |
+| memory-gate skill-recall 记账 | read `deliverables/*/SKILL.md` 正文 | 纯记账不拦截（匹配召回 §5.5；⑦ 节活性统计） |
 | memory-gate sleep 闸 | 活动量超阈（commits − 上次 REPORT 基准 > 30，每会话一次） | 催巡检：跑 /sleep 清单流（机械对账→元裁决→打勾→REPORT 落账即醒，§4.7） |
 | /sleep 命令 | 手动（prompt 模板） | sleep 清单流五步：对账/列清单/呈元裁决/打勾/落账即醒 |
+| /feedback 命令 | 手动（prompt 模板） | 元反馈书记员五步：呈报/预填/大白话/转写/确认落账（§9.1 verify 双轨） |
 | /check（R5–R8 通用，R1–R4 按需） | 手动或实现完成时 | 机械裁决，FAIL 带修复方向 |
 | pre-commit | 每次 git commit | **只跑 static 规则集**（R5 等）；R6 计划对碰靠工作流中 /check 触发——失败留档的计划合法存在于 `bcp/plans/`，故提交闸门不跑 --plan（已知缝隙）。绕过 = `--no-verify`（人可见越轨） |
 | evolve.py | 定期手动 | 晋升/降级候选数据，裁决权在元（§4.5） |

@@ -157,7 +157,7 @@ export default function memoryGate(pi: ExtensionAPI) {
 		// ② 大文件整读附注
 		// 技能召回记账（README §4.3/§9.1）：读技能正文 = 匹配召回事件，只记账不拦截（§5.5 漏斗第三层）
 		if (event.toolName === "read") {
-			const dm = abs.match(/deliverables[/\\][^/\\]+[/\\]SKILL\.md$/);
+			const dm = abs.match(/deliverables[/\\]([^/\\]+)[/\\]SKILL\.md$/);
 			if (dm) logGate(root, "skill-recall", dm[1], "READ");
 		}
 		if (event.toolName === "read" && BIG_READ_BYTES > 0) {
@@ -187,7 +187,7 @@ export default function memoryGate(pi: ExtensionAPI) {
 
 		let rules: string;
 		try {
-			rules = readFileSync(join(cwd, ".pi", "rules", `${domain}.md`), "utf-8");
+			rules = readFileSync(join(root, ".pi", "rules", `${domain}.md`), "utf-8");
 		} catch {
 			ctx.ui?.notify?.(`memory-gate: 规则文件缺失 .pi/rules/${domain}.md（fail-open 放行）`, "warning");
 			logGate(root, "domain", domain, "FAIL_OPEN");

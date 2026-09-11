@@ -29,9 +29,10 @@
 - ≤3 条避坑 → 对应 `.pi/rules/<域>.md`（无对应文件则新建并在 AGENTS.md「规则域映射」表登记，格式 = 模式页：问题+根因+证据+规避句，README §5.5）。
 - 0–1 条设计决定 → `Blueprint.md`（范式层 → `README.md`，需用户批准）。
 - 删除已完成任务的计划文件；失败任务的计划连同裁决留档，供换会话续跑。
-- 失败典藏：FAIL 任务强制压缩一条失败模式（标题+规避句 ≤200 字符）→ 追加 `bcp/ledger.jsonl`（mode=failure）+ 对应 `.pi/rules/<域>.md`；只回注模式，不回注尸体（README §1）。
-- 晋升/拒绝 evolve 候选后，追加 ledger 裁决记录（`verdict=PROMOTED|REJECTED`，`target`=规则名，`source`=来源失败模式，README §4.5）——⑥ 节回放，防重复提案。
+- 失败典藏：FAIL 任务强制压缩一条失败模式（标题+规避句 ≤200 字符 + `repro`=当轮失败命令，须只读断言 grep/test）→ 追加 `bcp/ledger.jsonl`（mode=failure）+ 对应 `.pi/rules/<域>.md`；只回注模式，不回注尸体（README §1）。repro 供 evolve ⑧ 节回放——规避句是假设，回放才成结论。
+- 晋升/拒绝 evolve 候选后，追加 ledger 裁决记录（`verdict=PROMOTED|REJECTED`，`target`=规则名，`source`=来源失败模式，`evidence`=批准所据 diff 概览/决策 ID——能垒保真探针，防橡皮图章，README §4.5）——⑥ 节回放，防重复提案；⑧ 节审计缺证据指针。
 - 技能沉淀 = 液态经验/裸跑轨迹结晶为固态 `deliverables/<name>/SKILL.md`（README §2.4，液→固相变）；默认文本轨道，Python 编译仅显式 `--compile-python` 或验证集成功率 ≥95% 触发。
 - Sleep 巡检（活动量触发，README §4.7）：memory-gate 催醒或手动 `/sleep`——机械对账（evolve.py + selfcheck）→ 列清单 → 呈元裁决 → 打勾 → 清单完成重跑 evolve.py 落 REPORT 即醒。
+- 元反馈协议（滞后验证，README §9.1 mode=verify）：阴 PASS 是入场券非完成态——任务收尾落 claim（`state=pending`，快照 claim/items/files/accept/anchors + `commits` 活动量基准，id=日期-slug）；元报障或修改产物时先查 pending，命中即访谈闭账（judged：verdicts 逐项 verified/drift/defect + attribution 归因层 design/plan/implementation/environment/requirement——environment 不罚 AI 只更新前提 + evidence 元实况 + route）。pending 是待办标记非阻塞标记，可永久存在、不自动 verified；触发口 = sleep 批量呈报（活动量分桶，可跳过）+ 报障即闭 + `/feedback` 主动闭。预填优先引用元既往 judged 模式（「你过去 N 次对 X 都归因 Y」）；显式教学（「以后 X 按 Y」）由书记员当场起草元技能（deliverables SKILL.md，同一 R8/召回/注册轨道）走结晶能垒，不散落对话；预填出自元技能时 judged 记 `prefill={skill,agree}`——确认率进 evolve ⑧，持续偏低呈降级候选。书记员纪律：只预填不代填、不推断元的意图、元确认前不落账、不翻案机械裁决。
 
 风格：直接、简洁、工程化；先结论，再必要说明。
