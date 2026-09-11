@@ -4,6 +4,8 @@
 
 [中文版](README.zh-CN.md) | **English**
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 BCP is not a tool, not a framework, not a product. It is a **coordination constitution** — it fixes what the human, the AI, and the symbolic system each do, what they must not do, and who has the final say.
 
 Its core is one sentence:
@@ -180,7 +182,7 @@ BCP is a **paradigm**, not a product.
 ```bash
 # 1. Copy the host-independent files into your project root
 #    (Blueprint.md is the paradigm spec and must be copied along)
-cp -r README.md README.zh-CN.md Blueprint.md plan.md bcp .pi <your-project>/
+cp -r README.md README.zh-CN.md Blueprint.md plan.md bcp .pi LICENSE <your-project>/
 
 # 2. Fill in the instance layer
 #    - AGENTS.md: project index, modeled on the kit/AGENTS.template.md skeleton (≤6KB)
@@ -198,7 +200,7 @@ python3 bcp/check.py --selfcheck
 
 ## License and contributing
 
-- **License**: not declared yet (currently a private repository; add a LICENSE before open-sourcing).
+- **License**: [MIT](LICENSE) — free to use, modify, and distribute, including commercially; keep the copyright and license notice.
 - **Contributing**: follow the BCP workflow — /bcp design lands a Blueprint section (two diagrams + section number, meta approval required) → /plan with anchored references → implementation → `/check` collision green. See the change workflow in [Blueprint.md](Blueprint.md).
 
 ## In one sentence

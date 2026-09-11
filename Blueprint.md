@@ -553,7 +553,7 @@ classDiagram
 
 | 层 | 件 | 归属 |
 |---|---|---|
-| 工具包 · **真宿主无关** | `README.md` + `README.zh-CN.md`（双语门面）· 本文件 · `plan.md` · `bcp/`（check.py / bcp.toml / evolve.py / ledger） · `deliverables/`（技能资产轨道，可选；自带旗舰示例 systems-engineering-meta，随包分发） | 复制到任何项目，只依赖 Python 3.11+ 标准库 |
+| 工具包 · **真宿主无关** | `README.md` + `README.zh-CN.md`（双语门面）· `LICENSE`（MIT）· 本文件 · `plan.md` · `bcp/`（check.py / bcp.toml / evolve.py / ledger） · `deliverables/`（技能资产轨道，可选；自带旗舰示例 systems-engineering-meta，随包分发） | 复制到任何项目，只依赖 Python 3.11+ 标准库 |
 | 工具包 · **pi 专属适配** | `.pi/`（APPEND_SYSTEM 工作流 + memory-gate 四闸门 + bcp-check + prompts） | **换宿主 = 必须重写等价的机械注入层**，否则 §7 四层记忆分层与墙纪律只落地一半 |
 | 项目实例 | `AGENTS.md`（项目索引） · 项目自己的 `Blueprint.md`（可选设计文档） · `.pi/rules/*.md` · `bcp/plans/` | 各项目自养 |
 

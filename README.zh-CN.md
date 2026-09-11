@@ -2,6 +2,8 @@
 
 [English](README.md) | **中文**
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 > **一个让领域专家安全使用 AI 构建复杂系统的开发范式。**
 
 BCP 的三个字母来自 **Blueprint Completion**：**蓝图**是元批准的设计（B 相位），**完形**（completion）是阳把不完整的上下文补成完整产出；**协议**（protocol）是三方各自做什么、不做什么、谁说了算的那套规定。
@@ -179,7 +181,7 @@ BCP 是一个**范式**，不是一个产品。
 
 ```bash
 # 1. 复制宿主无关件到项目根（Blueprint.md 是范式 spec，必须随包复制）
-cp -r README.md Blueprint.md plan.md bcp .pi <项目根>/
+cp -r README.md README.zh-CN.md Blueprint.md plan.md bcp .pi LICENSE <项目根>/
 
 # 2. 填实例层
 #    - AGENTS.md：按 kit/AGENTS.template.md 骨架填项目索引（≤6KB）
@@ -197,7 +199,7 @@ python3 bcp/check.py --selfcheck
 
 ## 许可证与贡献
 
-- **许可证**：暂未声明（当前为私有仓库；如需开源请先补 LICENSE）。
+- **许可证**：[MIT](LICENSE)——可自由使用、修改、分发（含商业用途），保留版权声明与许可声明即可。
 - **贡献**：走 BCP 工作流——/bcp 设计落 Blueprint 章节（两图 + 编号，需元批准）→ /plan 计划锚引用 → 实现 → `/check` 机械对碰全绿。详见 [Blueprint.md](Blueprint.md) 变更工作流。
 
 ## 一句话
