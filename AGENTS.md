@@ -1,6 +1,6 @@
 # bcp-kit 核心索引（自动加载）
 
-> 本仓库 = BCP 范式工具包（模板），自身亦按该范式运作（自举验证）。范式 spec：`README.md`；工作流：`.pi/APPEND_SYSTEM.md`；使用说明：`README.md`。
+> 本仓库 = BCP（Blueprint Completion Protocol，蓝图完形协议）范式工具包（模板），自身亦按该范式运作（自举验证）。范式 spec：`README.md`；工作流：`.pi/APPEND_SYSTEM.md`；使用说明：`README.md`。
 
 ## 结构
 
