@@ -2,7 +2,7 @@
 
 > 本文件只定义计划的 schema，不要把具体计划写进本文件。
 > 具体计划保存到 `bcp/plans/<slug>.plan.md`：任务完成后删除；失败任务的计划连同检查记录留档。
-> 机械校验：`./bcp/check.py --plan <计划文件> --collision`。范式背景见 `README.md`。
+> 机械校验：`./bcp/check.py --plan <计划文件> --collision`。范式背景见 `Blueprint.md`。
 
 ## schema
 
@@ -10,11 +10,11 @@ YAML 头（机器校验用）+ 简短正文（给人看）：
 
 ```yaml
 goal: 一句话说清要做什么
-mode: infer                   # 可选：explore | infer（缺省 infer）；产出 deliverables/SKILL.md 或 skill_evolution 任务必须 explore（R7，README §2.3）
+mode: infer                   # 可选：explore | infer（缺省 infer）；产出 deliverables/SKILL.md 或 skill_evolution 任务必须 explore（R7，Blueprint §2.3）
 items:
   - id: P1
-    blueprint: §5.2            # 必填：设计章节锚 `§x.y`（默认 Blueprint.md）或 `文件§x.y`（如 README.md§2.3）；悬空 = FAIL
-    files:                     # 必填：改哪些文件，精确到文件；声明了没改 / 改了没声明都算 FAIL（删除目标不进 files——用 accept 断言 test ! -f，§9.2）
+    blueprint: §5.2            # 必填：设计章节锚 `§x.y`（默认 Blueprint.md）或 `文件§x.y`（跨文档时显式命名文件）；悬空 = FAIL
+    files:                     # 必填：改哪些文件，精确到文件；声明了没改 / 改了没声明都算 FAIL（删除目标不进 files——用 accept 断言 test ! -f，§4.3）
       - src/orchestration/compile.rs
     interfaces:                # 推荐：关键签名，到代码文件里确认
       - "pub fn enqueue_compile_task"
@@ -28,7 +28,7 @@ items:
 1. 项目有 `Blueprint.md` 则先读之定位设计章节；无则按 AGENTS.md 现状直接规划。
 2. 对照 `AGENTS.md` 核对现状；接口签名引用既有契约，不发明。
 3. 用户确认计划后才进入实现。
-4. 技能进化 / 原始轨迹采集任务必须 `mode: explore`（组装相位裸跑，禁先验注入，README §2.3）；可复用成功轨迹按 README §2.4 结晶为固态技能（液→固相变，编译不默认）。
+4. 技能进化 / 原始轨迹采集任务必须 `mode: explore`（组装相位裸跑，禁先验注入，Blueprint §2.3）；可复用成功轨迹按 Blueprint §3.1 结晶为固态技能（液→固相变，编译不默认）。
 
 ## 阻塞点（当场提出，不拖到实现）
 

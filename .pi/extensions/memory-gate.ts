@@ -1,7 +1,7 @@
 /**
  * BCP 记忆闸门（memory-gate）——模板通用版
  *
- * 三个机械注入点（全部零 LLM，宿主强制，不依赖 agent 自觉）：
+ * 四个机械注入点（+ skill-recall 纯记账，不拦截；全部零 LLM，宿主强制，不依赖 agent 自觉）：
  *
  * 1. 域规则注入：agent 首次触碰某代码域文件（read/edit/write）时，拦截该次调用，
  *    把 .pi/rules/<域>.md 全文作为 block reason 注入；重试即放行，会话内每域只拦一次。
@@ -15,7 +15,10 @@
  *    注入"重读当前计划文件对齐进度"——执行状态 Σt 落盘在 bcp/plans/，过程可丢、
  *    状态必恢复（结构化状态投影）。
  *
- * 设计决定：README.md §5.5 / §8.3。触发信号 = 文件路径与事件（机械事实），无 LLM 判断。
+ * 4. sleep 巡检脉冲：活动量（commit 数 − 账本基线）超阈时拦截一次，催 /sleep 清单流
+ *    （机械对账→列清单→元裁决→打勾→REPORT 落账即醒）；每会话只脉冲一次（§5.6）。
+ *
+ * 设计决定：Blueprint §7.3 / §8.6。触发信号 = 文件路径与事件（机械事实），无 LLM 判断。
  * 所有拦截 fail-open：规则缺失/异常放行 + notify，绝不死锁。注入事件入 bcp/ledger.jsonl
  * （mode=gate，写失败静默跳过）。
  */
@@ -38,17 +41,17 @@ const ROUTES: [prefix: string, domain: string][] = [
 /** 大文件整读拦截阈值（字节）。~20KB ≈ 5-7k tokens。0 = 关闭。 */
 const BIG_READ_KB = 20;
 
-/** sleep 闸触发阈值（commit 数，README §4.7）：自上次巡检（evolve REPORT 落账）以来的活动量。 */
+/** sleep 闸触发阈值（commit 数，Blueprint §5.6）：自上次巡检（evolve REPORT 落账）以来的活动量。 */
 const SLEEP_COMMIT_THRESHOLD = 30;
 // ─────────────────────────────────────────────────────────────
 
 const BIG_READ_BYTES = BIG_READ_KB * 1024;
 
-// ── sleep 闸 helpers（README §4.7 / Blueprint §4.5）：活动量 = 当前 commit 数 − 基线 ──
+// ── sleep 闸 helpers（Blueprint §5.6）：活动量 = 当前 commit 数 − 基线 ──
 // 基线 = 账本中最后一条「mode=evolve 且带数值 commits」的记录（= evolve REPORT）。
-// mode=evolve 三态混用（REPORT / PROMOTED / REJECTED，README §9.1）：裁决记录无 commits，
+// mode=evolve 三态混用（REPORT / PROMOTED / REJECTED，Blueprint §8.4）：裁决记录无 commits，
 // 必须跳过继续回溯——否则一条裁决记录就把基线清零 → 误报超阈（2026-09-13 真件沙盒复现）。
-// 返回 null = 账本无基线记录（冷启动，Blueprint §4.5）；账本缺失/不可读同样 null（fail-open）。
+// 返回 null = 账本无基线记录（冷启动，Blueprint §5.6）；账本缺失/不可读同样 null（fail-open）。
 function lastReportCommits(root: string): number | null {
 	try {
 		const lines = readFileSync(join(root, "bcp", "ledger.jsonl"), "utf-8").trim().split("\n");
@@ -92,7 +95,7 @@ function logGate(cwd: string, kind: string, target: string, verdict: string, ext
 	try {
 		appendFileSync(
 			join(cwd, "bcp", "ledger.jsonl"),
-			// §4.3 契约：域注入事件 {domain, file}；kind/target 为兼容字段（evolve.py 兼容读两端）
+			// §5.2 契约：域注入事件 {domain, file}；kind/target 为兼容字段（evolve.py 兼容读两端）
 			JSON.stringify({ ts: localTs(), mode: "gate", verdict, fail: 0, warn: 0, findings: [], kind, target, ...extra }) + "\n",
 		);
 	} catch {
@@ -104,7 +107,7 @@ export default function memoryGate(pi: ExtensionAPI) {
 	const injectedDomains = new Set<string>(); // 每域只拦一次
 	const bigReadWarned = new Set<string>(); // 每大文件只拦一次
 	let compacted = false; // compaction 后首次工具调用拦截一次
-	let sleepPulsed = false; // sleep 闸（§4.7）：会话只催一次巡检
+	let sleepPulsed = false; // sleep 闸（§5.6）：会话只催一次巡检
 
 	pi.on("session_start", async () => {
 		injectedDomains.clear();
@@ -128,7 +131,7 @@ export default function memoryGate(pi: ExtensionAPI) {
 		const root = projectRoot(sessionCwd); // 账本/ROUTES 基准 = 工具包根；相对路径解析仍按会话 cwd（agent 语义不变）
 		const abs = resolve(sessionCwd, raw);
 
-		// sleep 闸（README §4.7 / Blueprint §4.5）：活动量超阈 → 催一次巡检（正反旋转：阴对账列清单，阳执行打勾，元独占裁决）
+		// sleep 闸（Blueprint §5.6）：活动量超阈 → 催一次巡检（正反旋转：阴对账列清单，阳执行打勾，元独占裁决）
 		if (!sleepPulsed) {
 			sleepPulsed = true;
 			const base = lastReportCommits(root); // null = 账本无基线记录（冷启动）
@@ -143,7 +146,7 @@ export default function memoryGate(pi: ExtensionAPI) {
 					block: true,
 					reason:
 						`[memory-gate] sleep 闸：${why}` +
-						`执行 sleep 巡检（/sleep 命令或按 README §4.7 清单流）：机械对账（evolve.py + check.py --selfcheck）→ 列清单 → 元逐条裁决 → 打勾 → ` +
+						`执行 sleep 巡检（/sleep 命令或按 Blueprint §5.6 清单流）：机械对账（evolve.py + check.py --selfcheck）→ 列清单 → 元逐条裁决 → 打勾 → ` +
 						`清单完成即重跑 evolve.py 落 REPORT 账（sleep 结束，本闸自动重置）。` +
 						`本次调用已标记已催，重发即放行。`,
 				};
@@ -165,7 +168,7 @@ export default function memoryGate(pi: ExtensionAPI) {
 		}
 
 		// ② 大文件整读附注
-		// 技能召回记账（README §4.3/§9.1）：读技能正文 = 匹配召回事件，只记账不拦截（§5.5 漏斗第三层）
+		// 技能召回记账（Blueprint §5.2/§8.4）：读技能正文 = 匹配召回事件，只记账不拦截（Blueprint §7.2 漏斗第三层）
 		if (event.toolName === "read") {
 			const dm = abs.match(/deliverables[/\\]([^/\\]+)[/\\]SKILL\.md$/);
 			if (dm) logGate(root, "skill-recall", dm[1], "READ");
@@ -205,7 +208,7 @@ export default function memoryGate(pi: ExtensionAPI) {
 			return;
 		}
 		injectedDomains.add(domain);
-		logGate(root, "domain", domain, "INJECTED", { domain, file: abs }); // §4.3 {domain, file}
+		logGate(root, "domain", domain, "INJECTED", { domain, file: abs }); // §5.2 {domain, file}
 		return {
 			block: true,
 			reason:

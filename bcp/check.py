@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""BCP 机械检查器 v0 —— 零 LLM（范式背景见 README.md）。
+"""BCP 机械检查器 v0 —— 零 LLM（范式背景见 Blueprint.md）。
 
 用法：
-  ./bcp/check.py                    # 静态规则集（R1-R5）
+  ./bcp/check.py                    # 静态规则集（R1–R5、R8）
   ./bcp/check.py --plan FILE        # + 计划引用解析与 accept 判据（R6）
   ./bcp/check.py --plan FILE --collision   # + git diff 双向对碰（实现完成后）
   ./bcp/check.py --no-exec          # R6 只解析不执行 accept
@@ -70,7 +70,7 @@ def _unquote(s: str) -> str:
     return s
 
 
-# ---------------------------------------------------------------- R1 六触点（示例模板，分流方法见 README.md §5.4）
+# ---------------------------------------------------------------- R1 六触点（示例模板，分流方法见 Blueprint.md §7.4）
 def r1_builtin_touchpoints() -> None:
     rule = "R1-builtin-touchpoints"
     cfg = CFG.get("rule", {}).get("builtin_touchpoints")
@@ -86,7 +86,7 @@ def r1_builtin_touchpoints() -> None:
                 fail(rule, f"触点未注册 {name!r} → {reg}")
 
 
-# ---------------------------------------------------------------- R2 类别子集同步（示例模板，分流方法见 README.md §5.4）
+# ---------------------------------------------------------------- R2 类别子集同步（示例模板，分流方法见 Blueprint.md §7.4）
 def _fn_string_literals(text: str, fn_name: str) -> set[str]:
     m = re.search(rf"fn {re.escape(fn_name)}\b.*?^}}", text, re.S | re.M)
     if not m:
@@ -112,7 +112,7 @@ def r2_category_subset() -> None:
         fail(rule, f"判据 {i!r} 在 {cfg['kind_fn']} 而不在 {cfg['category_fn']}")
 
 
-# ---------------------------------------------------------------- R3 死字段禁止（示例模板，分流方法见 README.md §5.4）
+# ---------------------------------------------------------------- R3 死字段禁止（示例模板，分流方法见 Blueprint.md §7.4）
 def r3_dead_fields() -> None:
     rule = "R3-dead-fields"
     cfg = CFG.get("rule", {}).get("dead_fields")
@@ -129,7 +129,7 @@ def r3_dead_fields() -> None:
                 fail(rule, f"死字段 {field} 在白名单外被引用: {rel}")
 
 
-# ---------------------------------------------------------------- R4 措辞禁令（示例模板，分流方法见 README.md §5.4）
+# ---------------------------------------------------------------- R4 措辞禁令（示例模板，分流方法见 Blueprint.md §7.4）
 def r4_wording() -> None:
     rule = "R4-wording-scope"
     cfg = CFG.get("rule", {}).get("wording")
@@ -177,7 +177,7 @@ def r5_doc_ghost_paths() -> None:
     targets: list[str] = []
     for doc in cfg["docs"]:
         if any(ch in doc for ch in "*?["):
-            # glob 零匹配 = 储层尚未沉淀（模板常态，§4.6 待积累语义），静默跳过不算告警
+            # glob 零匹配 = 储层尚未沉淀（模板常态，§5.7 待积累语义），静默跳过不算告警
             matched = sorted(glob.glob(str(ROOT / doc)))
             targets.extend(Path(m).resolve().relative_to(ROOT).as_posix() for m in matched)
         else:
@@ -210,7 +210,7 @@ def r5_doc_ghost_paths() -> None:
 
 # ---------------------------------------------------------------- R7 §2.3 探索纯净
 def r7_explore_purity(plan: dict) -> None:
-    rule = "R7-explore-purity(§2.3)"
+    rule = "R7-explore-purity"
     cfg = CFG.get("rule", {}).get("explore_purity")
     if not cfg:
         return
@@ -289,12 +289,12 @@ _SYNTAX_ERR = re.compile(r"(unexpected EOF|未预期的 EOF|syntax error|语法�
 
 
 def r8_skill_contract() -> None:
-    """R8-skill-contract（README §2.4）：技能结构闸——结晶的机械面。
+    """R8-skill-contract（Blueprint §3.1）：技能结构闸——结晶的机械面。
 
-    技能 = 液→固相变产物（§4.2 结晶算子）：固化资产必须自带适用条件、验证凭证、溯源，
+    技能 = 液→固相变产物（§5.1 结晶算子）：固化资产必须自带适用条件、验证凭证、溯源，
     否则不可召回（散文不可结晶）。无 deliverables/ 静默跳过（可选轨道，模板常态，同 R5 glob 语义）。
     """
-    rule = "R8-skill-contract(§2.4)"
+    rule = "R8-skill-contract"
     skills_dir = ROOT / "deliverables"
     if not skills_dir.is_dir():
         return
@@ -313,7 +313,7 @@ def r8_skill_contract() -> None:
         if not re.search(r"^#{1,3}\s*(适用|When to [Aa]pply)", body, re.M):
             fail(rule, f"{rel}: 缺「适用条件」节（→ 改文档：何时用/不用）")
         if not re.search(r"^#{1,3}\s*(溯源|Source)", body, re.M):
-            fail(rule, f"{rel}: 缺「溯源」节（→ 改文档：源自哪条失败模式/规则/任务，对应 §4.5 PROMOTED 记录）")
+            fail(rule, f"{rel}: 缺「溯源」节（→ 改文档：源自哪条失败模式/规则/任务，对应 §5.4 PROMOTED 记录）")
 
 
 def r6_plan(plan_path: Path, *, run_accept: bool, collision: bool) -> None:
@@ -332,7 +332,7 @@ def r6_plan(plan_path: Path, *, run_accept: bool, collision: bool) -> None:
         if not raw:
             warn(rule, f"{pid}: 未声明 blueprint 锚（建议引用章节号）")
             continue
-        # 锚格式：`§x.y`（默认 Blueprint.md）或 `文件§x.y`（如 README.md§2.3）
+        # 锚格式：`§x.y`（默认且通常为 Blueprint.md）或跨文档 `文件§x.y` 显式命名
         doc, _, sec = raw.partition("§")
         doc = doc.strip() or "Blueprint.md"
         sec = sec.strip()
@@ -372,7 +372,7 @@ def r6_plan(plan_path: Path, *, run_accept: bool, collision: bool) -> None:
             ln[3:].strip().strip('"')
             for ln in out
             # 剥引号：git 对含空格/特殊字符路径加 C 风格引号；排除删除（X/Y 含 D）：
-            # files 语义 = 修改/新建目标（§9.2），删除目标走 accept（test ! -f）验收，不进 files 对碰
+            # files 语义 = 修改/新建目标（§4.3），删除目标走 accept（test ! -f）验收，不进 files 对碰
             if len(ln) > 3 and "D" not in ln[:2]
         }
         # 豁免语义：excludes 路径不强制声明；但声明了就必须真改动。
@@ -399,11 +399,11 @@ def selfcheck() -> int:
     def note(tag: str, msg: str) -> None:
         lines.append(f"  [NOTE] {tag} — {msg}")
 
-    # ── 宿主适配层（pi 专属；换宿主 = 重写等价机械注入层，README 两层结构表）
+    # ── 宿主适配层（pi 专属；换宿主 = 重写等价机械注入层，Blueprint 两层结构表（§8.2））
     lines.append("[宿主适配层 .pi/（pi 专属，换宿主需重写等价机械注入层）]")
     item((ROOT / ".pi" / "APPEND_SYSTEM.md").exists(), "工作流内核", "在", "缺失——四步工作流不可用")
     gate = ROOT / ".pi" / "extensions" / "memory-gate.ts"
-    item(gate.exists(), "memory-gate 三闸门", "在", "缺失——域注入/大文件附注/compaction 恢复不可用")
+    item(gate.exists(), "memory-gate 四闸门", "在", "缺失——域注入/大文件附注/compaction 恢复/sleep 脉冲不可用")
     if gate.exists():
         # 剥离 // 注释行后机械提取 ROUTES（注释里的示例不得混入）
         src = "\n".join(ln for ln in read(gate).splitlines() if not ln.lstrip().startswith("//"))
@@ -434,7 +434,7 @@ def selfcheck() -> int:
     lines.append("[R6 计划对碰]")
     item((ROOT / "bcp" / "plans").exists(), "计划目录 bcp/plans/", "在", "缺失——/plan 产出无落点（首次 /plan 自动建亦可）")
 
-    # 技能召回挂载（可选轨道，README §2.4）：pi settings 路径相对 .pi 解析——必须验证解析后指向真实储层，
+    # 技能召回挂载（可选轨道，Blueprint §3.1）：pi settings 路径相对 .pi 解析——必须验证解析后指向真实储层，
     # 只 grep 字符串会漏掉「路径写错但词对了」的乌龙（实测发生：deliverables 写成相对 cwd，实际解析到 .pi/deliverables）
     skill_assets = sorted((ROOT / "deliverables").glob("*/SKILL.md")) if (ROOT / "deliverables").is_dir() else []
     if skill_assets:
@@ -448,11 +448,11 @@ def selfcheck() -> int:
                         break
             except (json.JSONDecodeError, OSError):
                 pass
-        item(mounted, "技能召回挂载", f"{len(skill_assets)} 个技能资产已挂载 pi 召回（解析验证通过）", "deliverables/ 有 SKILL.md 但 .pi/settings.json 未正确挂载（注意：路径相对 .pi 解析，应写 ../deliverables）——技能永不被召回（§5.5 匹配召回空转）")
+        item(mounted, "技能召回挂载", f"{len(skill_assets)} 个技能资产已挂载 pi 召回（解析验证通过）", "deliverables/ 有 SKILL.md 但 .pi/settings.json 未正确挂载（注意：路径相对 .pi 解析，应写 ../deliverables）——技能永不被召回（Blueprint §7.2 匹配召回空转）")
     else:
         note("技能储层 deliverables/", "无技能资产（可选轨道，模板常态；首个 SKILL.md 结晶后 R8 自动接管）")
     if not (ROOT / "Blueprint.md").exists():
-        note("Blueprint.md", "无——计划 blueprint 锚用 `文件§x.y` 格式（如 README.md§4）或先建蓝图（可选件，§2 B→P 接缝）")
+        note("Blueprint.md", "无——计划 blueprint 锚用 `文件§x.y` 格式（跨文档时显式命名文件）或先建蓝图（可选件，§2.1 B→P 接缝）")
     n_plan = 0
     if LEDGER.exists():
         for ln in LEDGER.read_text(encoding="utf-8").splitlines():
@@ -467,14 +467,14 @@ def selfcheck() -> int:
     lines.append("[R7 探索纯净]")
     item(bool(CFG.get("rule", {}).get("explore_purity")), "explore_purity 配置", "在", "bcp.toml 缺 [rule.explore_purity]——R7 空转")
 
-    # sleep 巡检节律（README §4.7）：活动量计数可见——腐烂从静默变可测量
+    # sleep 巡检节律（Blueprint §5.6）：活动量计数可见——腐烂从静默变可测量
     n_commit = 0
     try:
         n_commit = int(subprocess.run(["git", "rev-list", "--count", "HEAD"], capture_output=True, text=True, cwd=ROOT).stdout.strip() or 0)
     except Exception:
         pass
     n_last = 0
-    has_base = False  # 基线 = 最后一条带 commits 的 evolve 记录（= REPORT，§4.7/Blueprint §4.5）
+    has_base = False  # 基线 = 最后一条带 commits 的 evolve 记录（= REPORT，Blueprint §5.6）
     if LEDGER.exists():
         for ln in LEDGER.read_text(encoding="utf-8").splitlines():
             try:
@@ -486,17 +486,17 @@ def selfcheck() -> int:
                 n_last, has_base = r["commits"], True
     pulse = n_commit - n_last
     if has_base:
-        item(pulse <= 30, "sleep 巡检节律", f"活动量 {pulse}/30 commit", f"活动量 {pulse} > 30 未巡检——跑 python3 bcp/evolve.py 落 REPORT 账即重置（/sleep 清单流见 README §4.7）")
+        item(pulse <= 30, "sleep 巡检节律", f"活动量 {pulse}/30 commit", f"活动量 {pulse} > 30 未巡检——跑 python3 bcp/evolve.py 落 REPORT 账即重置（/sleep 清单流见 Blueprint §5.6）")
     else:
         item(n_commit <= 30, "sleep 巡检节律", f"账本无基线记录（commits={n_commit} ≤ 30，冷启动按 0 起算，不触发）",
-             f"账本无基线记录且 commits={n_commit} > 30——冷启动基线引导（非未巡检）：跑 python3 bcp/evolve.py 落 REPORT 账建立基线（README §4.7 / Blueprint §4.5）")
+             f"账本无基线记录且 commits={n_commit} > 30——冷启动基线引导（非未巡检）：跑 python3 bcp/evolve.py 落 REPORT 账建立基线（Blueprint §5.6）")
 
-    # 工作流逃逸代理（README §4.7）：commit 数 vs plan 记录数——粗代理非裁决，元看数据对账（/sleep）
+    # 工作流逃逸代理（Blueprint §5.6）：commit 数 vs plan 记录数——粗代理非裁决，元看数据对账（/sleep）
     item(not (n_commit > 30 and n_plan * 5 < n_commit), "工作流逃逸代理", f"commits={n_commit} plan记录={n_plan}", "高 commit 低 plan 记录——疑有任务绕过计划流，跑 /sleep 对账清单核查")
 
-    # 账本健康（§4.3 生命周期）：体积可见——归档时机由数据说话（append-only 无界，归档协议暂缓）
+    # 账本健康（§5.2 生命周期）：体积可见——归档时机由数据说话（append-only 无界，归档协议暂缓）
     if LEDGER.exists():
-        note("账本健康", f"{sum(1 for _ in LEDGER.open(encoding='utf-8'))} 条 / {LEDGER.stat().st_size / 1024:.0f}KB（append-only 无界；>5MB 再议冷归档 §4.3）")
+        note("账本健康", f"{sum(1 for _ in LEDGER.open(encoding='utf-8'))} 条 / {LEDGER.stat().st_size / 1024:.0f}KB（append-only 无界；>5MB 再议冷归档 §5.2）")
     else:
         note("账本健康", "空（首条记录落账后创建）")
 
@@ -543,8 +543,8 @@ def main() -> int:
         "R4-wording-scope": "改代码",
         "R5-doc-ghost-paths(引用完整性)": "改文档",
         "R6-plan-collision": "见各条",
-        "R7-explore-purity(§2.3)": "改计划",
-        "R8-skill-contract(§2.4)": "改文档",
+        "R7-explore-purity": "改计划",
+        "R8-skill-contract": "改文档",
     }
     for r, s, m in findings:
         print(f"[{s}] {r} [{seam.get(r, '')}]\n    {m}")
@@ -559,7 +559,7 @@ def main() -> int:
         "verdict": verdict,
         "fail": n_fail,
         "warn": n_warn,
-        # 单条体积上界（§4.3 生命周期）：findings 截断 top50、msg≤200 字符；全文在 stdout，账本只需索引
+        # 单条体积上界（§5.2 生命周期）：findings 截断 top50、msg≤200 字符；全文在 stdout，账本只需索引
         "findings": [
             {"rule": r, "sev": s, "msg": m[:200]}
             for r, s, m in findings[:50]

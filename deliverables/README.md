@@ -3,7 +3,7 @@
 液态经验（`.pi/rules/` 模式页、explore 裸跑轨迹、失败典藏）反复被召回/验证后，
 经门控结晶为固态技能：`<name>/SKILL.md`。
 
-结构契约（R8-skill-contract 机械校验，README §2.4）：
+结构契约（R8-skill-contract 机械校验，Blueprint §3.1）：
 
 - frontmatter 三件套：`name`（标识）、`description`（一行式目录——pi 常驻系统提示，
   命中才读正文 = 渐进披露）、`validation`（验证命令或 `manual`——结晶凭证）

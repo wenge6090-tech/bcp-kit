@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""BCP 宿主行为契约一致性向量集（零 LLM，README §8.1 / kit/host-contract.md §4）。
+"""BCP 宿主行为契约一致性向量集（零 LLM，Blueprint §8.2 / kit/host-contract.md §4）。
 
 参考实现 GateCore = 契约语义的可执行形式（从 pi 适配层 memory-gate.ts 行为抽取）。
 移植者：在目标宿主实现等价闸门后，写薄适配器把宿主事件喂给同一 VECTORS——全绿才算
@@ -29,7 +29,7 @@ class GateCore:
         self.rules_reader = rules_reader        # domain -> str | None（None=缺失→fail-open）
         self.size_of = size_of                  # path -> int | None（None=stat 失败→放行）
         self.commit_delta = commit_delta        # () -> int
-        self.has_baseline = has_baseline        # 账本有无基线记录（§4.5）；False = 冷启动 → 文案分支
+        self.has_baseline = has_baseline        # 账本有无基线记录（§5.6）；False = 冷启动 → 文案分支
         self.events: list[dict] = []            # 账本事件（mode=gate）
         self.injected_domains: set[str] = set()
         self.big_read_warned: set[str] = set()
@@ -50,7 +50,7 @@ class GateCore:
             self.sleep_pulsed = True
             if self.commit_delta() > self.sleep_threshold:
                 self._log("sleep", "pulse", "INJECTED")
-                # 无基线记录 = 冷启动：文案为「基线引导」而非「经验积压」（Blueprint §4.5）
+                # 无基线记录 = 冷启动：文案为「基线引导」而非「经验积压」（Blueprint §5.6）
                 return Action(True, "sleep pulse：基线引导（账本尚无巡检记录）" if not self.has_baseline
                               else "sleep pulse：催巡检")
         # ② compact-restore（每次压缩后一次）
@@ -135,7 +135,7 @@ VECTORS: list[dict] = [
         (None, "read", "/repo/src/a.rs", (False, None, None)),  # = 阈值不触发（严格大于）
     ]),
     dict(name="v_sleep_coldstart_bootstrap_text", h=lambda: harness(delta=31, has_baseline=False), steps=[
-        # 冷启动（账本无基线记录）：仍拦截，但文案 = 基线引导，不得宣称经验积压（Blueprint §4.5）
+        # 冷启动（账本无基线记录）：仍拦截，但文案 = 基线引导，不得宣称经验积压（Blueprint §5.6）
         (None, "read", "/repo/src/a.rs", (True, "基线引导", ("sleep", "INJECTED"))),
     ]),
     dict(name="v_priority_sleep_over_compact", h=lambda: harness(delta=31), steps=[

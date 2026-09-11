@@ -1,8 +1,8 @@
 # BCP 宿主行为契约（注入层）v1
 
-> 定义 §5 记忆分层 + §6 墙纪律在宿主侧执行体（pi 中为 `.pi/extensions/memory-gate.ts`）
+> 定义 §7 记忆分层 + §7.5 墙纪律在宿主侧执行体（pi 中为 `.pi/extensions/memory-gate.ts`）
 > 的行为契约——**换宿主重写等价机械层时的对碰面，不猜适配层源码**。
-> 本契约只覆盖注入层；对碰器/报告器（`bcp/check.py`、`bcp/evolve.py`）由 README §8.1
+> 本契约只覆盖注入层；对碰器/报告器（`bcp/check.py`、`bcp/evolve.py`）由 Blueprint §8.2
 > 最小契约覆盖（Python 3.11+ 标准库，直接复制）。
 
 ## 1. 宿主必须提供的钩子
@@ -22,9 +22,9 @@ skill-recall 只记账不拦截。全部零 LLM，触发信号 = 文件路径/�
 
 | 闸门 | 触发 | 动作 | 一次性语义 | fail-open | 账本事件（mode=gate） |
 |---|---|---|---|---|---|
-| sleep | 任意 read/edit/write，且 当前 commit 数 − 基线 > 阈值（缺省 30）。**基线 = 最后一条「mode=evolve 且带 `commits`」的记录**（= evolve REPORT）；裁决记录 PROMOTED/REJECTED 无 `commits`，跳过回溯、不重置基线 | 拦截 + 催巡检指引（对账→列清单→元裁决）；**账本无基线记录时文案 = 基线引导**（非「经验积压」，Blueprint §4.5） | 每会话至多一次脉冲；首个工具调用即消耗脉冲资格（无论超阈否） | ① 非 git → commitCount=0 → 差值 ≤ 0，永不触发；② 账本缺失/不可读 → 无基线记录，按 0 起算**不豁免**（commit > 阈值时照常触发） | kind=sleep target=pulse verdict=INJECTED |
+| sleep | 任意 read/edit/write，且 当前 commit 数 − 基线 > 阈值（缺省 30）。**基线 = 最后一条「mode=evolve 且带 `commits`」的记录**（= evolve REPORT）；裁决记录 PROMOTED/REJECTED 无 `commits`，跳过回溯、不重置基线 | 拦截 + 催巡检指引（对账→列清单→元裁决）；**账本无基线记录时文案 = 基线引导**（非「经验积压」，Blueprint §5.6） | 每会话至多一次脉冲；首个工具调用即消耗脉冲资格（无论超阈否） | ① 非 git → commitCount=0 → 差值 ≤ 0，永不触发；② 账本缺失/不可读 → 无基线记录，按 0 起算**不豁免**（commit > 阈值时照常触发） | kind=sleep target=pulse verdict=INJECTED |
 | compact-restore | 会话压缩后首次 read/edit/write | 拦截 + 「重读计划文件对齐 Σt」指引 | 每次压缩后一次 | — | kind=compact-restore verdict=INJECTED |
-| skill-recall | read 命中 `deliverables/<name>/SKILL.md` | 只记账（匹配召回，§5.5 第三层） | 每次都记 | — | kind=skill-recall target=\<name\> verdict=READ |
+| skill-recall | read 命中 `deliverables/<name>/SKILL.md` | 只记账（匹配召回，Blueprint §7.2 第三层） | 每次都记 | — | kind=skill-recall target=\<name\> verdict=READ |
 | big-read | read 且目标 > 阈值（缺省 20KB） | 拦截 + 「先定位再定点读」指引 | 每文件每会话一次 | stat 失败放行（让 read 自行报错） | kind=big-read verdict=INJECTED |
 | domain | read/edit/write 命中 ROUTES 前缀且该域本会话未注入 | 拦截 + 注入 `.pi/rules/<域>.md` 全文 | 每域每会话一次 | 规则文件缺失：放行 + notify + FAIL_OPEN，域仍标记已处理 | kind=domain verdict=INJECTED（附 domain/file）或 FAIL_OPEN |
 
@@ -57,6 +57,6 @@ skill-recall 只记账不拦截。全部零 LLM，触发信号 = 文件路径/�
 - 抽取过程即捕获一例 P0：域注入读规则文件引用了游离变量，异常被 catch 吞成
   fail-open——闸门静默死亡，账本仅剩 FAIL_OPEN 尾迹。契约显式化前此类缺陷无传感器；
   §4 向量（v_domain_first_touch / v_rules_missing / v_failopen_silent）即防复发。
-- 2026-09-13 冷启动审查（Blueprint §4.5）：本表原把「非 git」与「账本不可读」并成一格
+- 2026-09-13 冷启动审查（Blueprint §5.6）：本表原把「非 git」与「账本不可读」并成一格
   写「永不触发」——账本不可读 → 基线 0，而 commit 可能 > 阈值，实际会触发。
   同批修正 sleep 基线定义（只认带 `commits` 的记录）。

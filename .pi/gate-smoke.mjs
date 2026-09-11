@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * memory-gate sleep 闸真件冒烟（pi 适配层专属，需 node ≥ 22 原生 TS 剥离；不属 README §8.1 最小契约）。
+ * memory-gate sleep 闸真件冒烟（pi 适配层专属，需 node ≥ 22 原生 TS 剥离；不属 Blueprint §8.2 最小契约）。
  *
  * 为什么要有它：kit/host-contract.test.py 测的是「行为契约的参考实现」——宿主无关、供移植者对齐，
  * 但它把基线抽象成注入的 commit_delta()，测不到真件对账本的真实解析（裁决记录跳过 / 账本缺失）。
- * §4.2「无物对碰 README 承诺↔机械层行为」的缺口由本脚本补：真件导入 + 沙盒仓库，
+ * §5.5「无物对碰 README 承诺↔机械层行为」的缺口由本脚本补：真件导入 + 沙盒仓库，
  * 满足规则模式 8「改 gate 必真触发一次并验 INJECTED 落账」。
  *
  * 纪律：只在 mkdtemp 沙盒里跑，真账本 bcp/ledger.jsonl 永不被触碰（规则模式 3）。
@@ -53,7 +53,7 @@ const pulsed = (events) => events.some((e) => e.kind === "sleep" && e.verdict ==
 
 const SCENARIOS = [
 	{
-		name: "冷启动：无基线记录 → 文案 = 基线引导（Blueprint §4.5）",
+		name: "冷启动：无基线记录 → 文案 = 基线引导（Blueprint §5.6）",
 		ledger: [],
 		commits: T + 1,
 		expect: (r, ev) => r?.block === true && /基线引导/.test(r.reason) && !/液态经验在积压/.test(r.reason) && pulsed(ev),

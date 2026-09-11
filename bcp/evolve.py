@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""BCP 演化算子报告器 v0 —— 零 LLM（README.md §4.4）。
+"""BCP 演化算子报告器 v0 —— 零 LLM（Blueprint.md §5.3）。
 
-只产数据，不当裁判：晋升/降级候选是统计信号，裁决权在人（§4.5 能垒）。
+只产数据，不当裁判：晋升/降级候选是统计信号，裁决权在人（§5.1 能垒）。
 规则名注册表从 check.py 的 seam 表正则机械提取（单一来源，不建副本）。
 用法：python3 bcp/evolve.py [--window N] [--min-hits M] [--ledger PATH]     # 退出码恒 0
 每次运行追加 mode=evolve 审计记录到 bcp/ledger.jsonl（候选以 findings WARN 入账）。
@@ -24,7 +24,7 @@ LEDGER = ROOT / "bcp" / "ledger.jsonl"
 CHECK = ROOT / "bcp" / "check.py"
 RULES_DIR = ROOT / ".pi" / "rules"
 CFG = tomllib.loads((ROOT / "bcp" / "bcp.toml").read_text(encoding="utf-8"))
-# §4.5 降级豁免（配置单一来源 bcp.toml [rule.demote]）：结构性规则违反即大改、命中天然低频，不参与命中数降级
+# §5.4 降级豁免（配置单一来源 bcp.toml [rule.demote]）：结构性规则违反即大改、命中天然低频，不参与命中数降级
 DEMOTE_EXEMPT = tuple(CFG.get("rule", {}).get("demote", {}).get("exempt_prefixes", []))
 
 
@@ -77,19 +77,22 @@ def main() -> int:
     fail_open = 0
     verdicts: list[tuple[str, str, str, str, str, str]] = []
     skill_recall: Counter[str] = Counter()
-    verify_pending: list[dict] = []      # 元反馈协议（§9.1）：待验证声明
+    verify_pending: list[dict] = []      # 元反馈协议（§6）：待验证声明
     verify_judged: set[str] = set()     # 已裁决的 claim id（ref 对账）
     verify_judged_recs: list[dict] = []
+    # 预填确认率统计（§3.1）：函数级初始化——无 judged 记录时必须仍为空 dict 而非未定义
+    # （空数据分支同在免疫面内，§5.5；2026-09-11 sleep 对账实测崩溃点）
+    by_skill: dict[str, list[int]] = {}
 
     for r in recs:
         mode = r.get("mode", "")
         if mode == "gate":
             kind = str(r.get("kind", "domain"))
-            if kind == "skill-recall":  # §2.4 技能召回事件（不参与 §4.6 冷启动判定——冷启动只看域注入）
+            if kind == "skill-recall":  # §2 技能召回事件（不参与 §5.7 冷启动判定——冷启动只看域注入）
                 skill_recall[str(r.get("target") or r.get("domain") or "?")] += 1
                 continue
             # 只统计域注入（kind=domain）：big-read/compact-restore 无 domain，计入会污染
-            # §4.6 冷启动判定与域统计。字段兼容：旧记录仅 target（memory-gate 曾写 kind/target）。
+            # §5.7 冷启动判定与域统计。字段兼容：旧记录仅 target（memory-gate 曾写 kind/target）。
             if kind != "domain":
                 continue
             d = str(r.get("domain") or r.get("target") or "?")
@@ -100,10 +103,10 @@ def main() -> int:
                 fail_open += 1
             continue
         if mode == "evolve":
-            if r.get("verdict") in ("PROMOTED", "REJECTED"):  # §4.5 晋升裁决史（skill-impact 同构；evidence=能垒保真探针，⑧ 节审计）
+            if r.get("verdict") in ("PROMOTED", "REJECTED"):  # §5.4 晋升裁决史（skill-impact 同构；evidence=能垒保真探针，⑧ 节审计）
                 verdicts.append((str(r.get("ts", "")), str(r.get("verdict", "")), str(r.get("target", "")), str(r.get("source", "")), str(r.get("note", "")), str(r.get("evidence", ""))))
             continue
-        if mode == "verify":  # 元反馈协议（§9.1）：pending=claim，judged=元滞后裁决（双轨：阴 PASS=入场券，元验证=终审）
+        if mode == "verify":  # 元反馈协议（§6）：pending=claim，judged=元滞后裁决（双轨：阴 PASS=入场券，元验证=终审）
             if r.get("state") == "pending":
                 verify_pending.append(r)
             elif r.get("state") == "judged":
@@ -141,9 +144,9 @@ def main() -> int:
     lines: list[str] = [
         f"BCP 演化算子报告  window={args.window}d  min_hits={args.min_hits}  账本记录={len(recs)}  commits={n_commit_head}  plan记录={n_plan_head}"
     ]
-    cold = sum(gate_by_domain.values()) == 0  # §4.6 冷启动：无任何域注入事件，死重判定无效
+    cold = sum(gate_by_domain.values()) == 0  # §5.7 冷启动：无任何域注入事件，死重判定无效
     if cold:
-        lines.append("  [冷启动] 尚无域注入事件——死重判定无效，④ 列为待积累（§4.6）")
+        lines.append("  [冷启动] 尚无域注入事件——死重判定无效，④ 列为待积累（§5.7）")
 
     lines.append("\n① check 规则命中（注册表来源：check.py seam 表）")
     for rule in rules:
@@ -160,7 +163,7 @@ def main() -> int:
             f"  {d:15s} 注入={gate_by_domain.get(d, 0):3d}  触碰文件数={len(gate_files.get(d, set()))}"
         )
 
-    lines.append("\n③ 降级候选（窗口内零命中；豁免前缀 " + (" ".join(DEMOTE_EXEMPT) or "无") + "，§4.5 人裁决）")
+    lines.append("\n③ 降级候选（窗口内零命中；豁免前缀 " + (" ".join(DEMOTE_EXEMPT) or "无") + "，§5.4 人裁决）")
     demote = [
         r for r in rules
         if rule_win.get(r, 0) == 0 and not r.startswith(DEMOTE_EXEMPT)
@@ -172,12 +175,12 @@ def main() -> int:
 
     known = sorted(p.stem for p in RULES_DIR.glob("*.md")) if RULES_DIR.exists() else []
     if cold:
-        lines.append("\n④ 规则文件注入状态（冷启动——待积累，§4.6）")
+        lines.append("\n④ 规则文件注入状态（冷启动——待积累，§5.7）")
         for d in known:
             lines.append(f"  .pi/rules/{d}.md  待积累")
         if not known:
             lines.append("  （无规则文件）")
-        dead: list[str] = []  # 冷启动不产死重候选（§4.6），审计零 WARN
+        dead: list[str] = []  # 冷启动不产死重候选（§5.7），审计零 WARN
     else:
         lines.append("\n④ 死重候选（从未被注入的规则文件）")
         dead = [d for d in known if d not in gate_domains]
@@ -193,7 +196,7 @@ def main() -> int:
     if not strong:
         lines.append("  （无）")
 
-    lines.append("\n⑥ 晋升裁决史（PROMOTED/REJECTED，防重复提案；§4.5）")
+    lines.append("\n⑥ 晋升裁决史（PROMOTED/REJECTED，防重复提案；§5.4）")
     for ts, v, tgt, src, note, ev in verdicts:
         entry = f"  {ts}  {v:9s} {tgt}"
         if src:
@@ -204,11 +207,11 @@ def main() -> int:
             entry += "  [无证据指针]"
         lines.append(entry.rstrip())
     if not verdicts:
-        lines.append("  （无——晋升候选经人批准/拒绝后按协议追加裁决记录，见 §9.1）")
+        lines.append("  （无——晋升候选经人批准/拒绝后按协议追加裁决记录，见 §6）")
 
-    lines.append("\n⑦ 技能资产（deliverables/*/SKILL.md，召回=skill-recall 事件，§2.4）")
+    lines.append("\n⑦ 技能资产（deliverables/*/SKILL.md，召回=skill-recall 事件，§2）")
     skills = sorted(p.parent.name for p in (ROOT / "deliverables").glob("*/SKILL.md")) if (ROOT / "deliverables").is_dir() else []
-    # 注册对碰（声明↔实现，R6 同构）：技能的注册凭证 = ledger PROMOTED 记录（结晶经能垒，§4.5）。
+    # 注册对碰（声明↔实现，R6 同构）：技能的注册凭证 = ledger PROMOTED 记录（结晶经能垒，§5.4）。
     # 协议：技能裁决记录 target=技能名且 kind="skill"（与规则晋升的 PROMOTED 区分）。
     skill_promoted = {str(r.get("target")) for r in recs if r.get("mode") == "evolve" and r.get("verdict") == "PROMOTED" and str(r.get("kind")) == "skill"}
     for s in skills:
@@ -299,10 +302,10 @@ def main() -> int:
         lines.append(
             f"  元裁决 {total} 条：verified {cnt['verified']} / drift {cnt['drift']} / defect {cnt['defect']}{rate}（evidence 必填，缺 {no_ev2} 条）"
         )
-        # 预填确认率（元技能双螺旋，README §2.4）：prefill={skill,agree} 缺省不计（向后兼容）；
-        # 阈值 60% 先常量（§4.2 攒证据后配置化）。低于阈值 = 降级候选（findings WARN 呈元）。
+        # 预填确认率（元技能双螺旋，Blueprint §3.1）：prefill={skill,agree} 缺省不计（向后兼容）；
+        # 阈值 60% 先常量（§5.1 攒证据后配置化）。低于阈值 = 降级候选（findings WARN 呈元）。
         pre_total = pre_agree = 0
-        by_skill: dict[str, list[int]] = {}
+        by_skill.clear()
         for r in stats_recs:
             pf = r.get("prefill")
             if isinstance(pf, dict) and pf:
@@ -325,7 +328,7 @@ def main() -> int:
 
     print("\n".join(lines))
 
-    # 审计痕迹（§4.3：候选以 findings WARN 入账）
+    # 审计痕迹（§5.2：候选以 findings WARN 入账）
     findings = [
         {"rule": "evolve-report", "sev": "WARN", "msg": msg}
         for msg in (
@@ -340,7 +343,7 @@ def main() -> int:
         "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "mode": "evolve",
         "verdict": "REPORT",
-        # sleep 触发对账基准（README §4.7）：gate 比较「当前 commit 数 − 此值 > 阈值」→ 催巡检
+        # sleep 触发对账基准（Blueprint §5.6）：gate 比较「当前 commit 数 − 此值 > 阈值」→ 催巡检
         "commits": (lambda p: int(p.stdout.strip() or 0) if p.returncode == 0 else None)(
             subprocess.run(["git", "rev-list", "--count", "HEAD"], capture_output=True, text=True, cwd=ROOT)
         ),

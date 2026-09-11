@@ -66,7 +66,7 @@ export default function bcpCheckExtension(pi: ExtensionAPI) {
 				pi.sendUserMessage(
 					`[bcp-check] 检查 PASS（${plan}）。收尾：\n` +
 						`1. ≤3 条避坑写入对应 .pi/rules/<域>.md（无对应文件则新建并在 AGENTS.md 域映射表登记）；\n` +
-						`2. 0–1 条设计决定回写 Blueprint.md（范式层则回写 README.md，先征得用户确认）；\n` +
+						`2. 0–1 条设计决定回写 Blueprint.md（含范式层，先征得用户批准；README 门面变更无垒）；\n` +
 						`3. 删除计划文件 ${plan}（成功即删，失败才留档）。`,
 				);
 			} else {
@@ -75,8 +75,8 @@ export default function bcpCheckExtension(pi: ExtensionAPI) {
 				pi.sendUserMessage(
 					`[bcp-check] 检查 FAIL（${plan}）。机械裁决：\n\n${output}\n\n` +
 						`按每条标注的修复方向处理（改代码 / 改文档 / 改计划），改完再次 /check。` +
-						`若本任务最终以 FAIL 收尾（不再重试）：强制失败典藏（README §1）——压缩一条失败模式` +
-						`（标题+规避句 ≤200 字符）追加 bcp/ledger.jsonl（mode=failure，字段 title/avoidance/domain，§4.3）` +
+						`若本任务最终以 FAIL 收尾（不再重试）：强制失败典藏（Blueprint §8.4）——压缩一条失败模式` +
+						`（标题+规避句 ≤200 字符）追加 bcp/ledger.jsonl（mode=failure，字段 title/avoidance/domain，§8.4）` +
 						`+ 对应 .pi/rules/<域>.md。`,
 				);
 			}
